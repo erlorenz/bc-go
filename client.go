@@ -1,39 +1,39 @@
 package bcgo
 
 import (
-	"cmp"
 	"fmt"
 	"log/slog"
-	"net/http"
-	"os"
-	"time"
+	"net/url"
 )
 
+// Client is used to send ana receive HTTP requests/responses to the
+// API server. There should be one client created per publisher/group/version
+// combination as these can each have their own schemas. Clients can
+// share the authClient if they are using the same scope.
 type Client struct {
 	authClient TokenGetter
-	baseClient *http.Client
-	baseURL    URLString
+	baseClient HTTPClient
+	baseURL    *url.URL
+	common     bool
 	config     ClientConfig
 	logger     *slog.Logger
 }
 
+// The manadatory configuration params for the Client.
 type ClientConfig struct {
-	TenantID     GUID
-	CompanyID    GUID
-	Environment  string
-	APIPublisher string
-	APIGroup     string
-	APIVersion   string
+	TenantID    GUID
+	CompanyID   GUID
+	Environment string
+	APIEndpoint string
 }
 
+// Validates that the params are all in correct format.
 func (p ClientConfig) Validate() error {
 	err := ValidatorMap{
-		"TenantID":     p.TenantID,
-		"CompanyID":    p.CompanyID,
-		"Environment":  NotEmptyString(p.Environment),
-		"APIPublisher": NotEmptyString(p.APIPublisher),
-		"APIGroup":     NotEmptyString(p.APIGroup),
-		"APIVersion":   NotEmptyString(p.APIVersion),
+		"TenantID":    p.TenantID,
+		"CompanyID":   p.CompanyID,
+		"Environment": NotEmptyString(p.Environment),
+		"APIEndpoint": NotEmptyString(p.APIEndpoint),
 	}.Validate()
 
 	if err != nil {
@@ -42,20 +42,30 @@ func (p ClientConfig) Validate() error {
 	return nil
 }
 
-// New takes
-func NewClient(config ClientConfig, authClient TokenGetter, opts ...func(*Client)) (*Client, error) {
+// New client takes the mandatory ClientConfig params, a TokenGetter, and
+// optional configuration using the functional options pattern.
+// Logger and HTTPClient will be set to defaults if not optionally set.
+func NewClient(config ClientConfig, authClient TokenGetter, opts ...ClientOptionFunc) (*Client, error) {
 
 	// Validate params
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("error validating ClientParams: %w", err)
 	}
 
+	// Create ClientOptions and set them from opts
+	options := newClientOptions(opts)
+
+	// Check if it is a common endpoint (v2.0 for now)
+	// Common endpoints have different path structure
+	common := config.APIEndpoint == "v2.0"
+
 	// Create the client
 	client := &Client{
 		authClient: authClient,
 		config:     config,
-		baseClient: nil,
-		logger:     nil,
+		logger:     options.logger,
+		baseClient: options.httpClient,
+		common:     common,
 	}
 
 	// Create the base URL
@@ -65,46 +75,21 @@ func NewClient(config ClientConfig, authClient TokenGetter, opts ...func(*Client
 	}
 	client.baseURL = baseURL
 
-	// Apply options
-	for _, o := range opts {
-		o(client)
-	}
-
-	// Create a default http client and logger if not provided
-	client.baseClient = cmp.Or(client.baseClient, &http.Client{
-		Timeout: time.Second * 15,
-	})
-
-	client.logger = cmp.Or(client.logger, slog.New(slog.NewJSONHandler(os.Stderr, nil)))
-
 	return client, nil
 }
 
-// PubGroup returns the API Publisher and API Group
-// in the format <publisher>/<group>
-func (c *Client) PubGroup() string {
-	return fmt.Sprintf("%s/%s", c.config.APIPublisher, c.config.APIGroup)
+// APIEndpoint returns the API endpoint, either the version for a common endpoint
+// or the <publisher>/<group>/<version> if an extension API.
+func (c *Client) APIEndpoint() string {
+	return c.config.APIEndpoint
 }
 
-// Config returns ClientConfig for this instance
+// IsCommon returns true if it is a common service endpoint.
+func (c *Client) IsCommon() bool {
+	return c.common
+}
+
+// Config returns ClientConfig for this instance.
 func (c *Client) Config() ClientConfig {
 	return c.config
-}
-
-// buildBaseURL builds the BaseURL from the ClientConfig.
-func buildBaseURL(cfg ClientConfig) (URLString, error) {
-	// All BC APIs use this
-	staticURL := "https://api.businesscentral.dynamics.com/v2.0"
-
-	// Specific to this Client
-	apiPathSegments := fmt.Sprintf("%s/%s/%s", cfg.APIPublisher, cfg.APIGroup, cfg.APIVersion)
-	dynamicURL := fmt.Sprintf("/%s/%s/api/%s/companies(%s)", cfg.TenantID, cfg.Environment, apiPathSegments, cfg.CompanyID)
-
-	// Final combination
-	baseURL := URLString(staticURL + dynamicURL)
-	if err := baseURL.Validate(); err != nil {
-		return "", fmt.Errorf("error building BaseURL: %w", err)
-	}
-
-	return baseURL, nil
 }
