@@ -20,6 +20,7 @@ var AcceptJSONNoMetadata = strings.Join([]string{ContentTypeJSON, NoODATAMetadat
 type MakeRequestOptions struct {
 	method        string
 	entitySetName string
+	recordID      GUID
 	queryParams   map[string]string
 	body          any
 }
@@ -32,7 +33,7 @@ type QueryParams map[string]string
 func (c *Client) NewRequest(ctx context.Context, opts MakeRequestOptions) (*http.Request, error) {
 
 	// Build the full URL string
-	urlString := buildRequestURL(*c.baseURL, opts.entitySetName, opts.queryParams)
+	newURL := buildRequestURL(*c.baseURL, opts.entitySetName, opts.recordID, opts.queryParams)
 
 	// Marshall JSON
 	body, err := json.Marshal(opts.body)
@@ -41,7 +42,7 @@ func (c *Client) NewRequest(ctx context.Context, opts MakeRequestOptions) (*http
 	}
 
 	// Create Request
-	req, err := http.NewRequestWithContext(ctx, opts.method, string(urlString), bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, opts.method, newURL.String(), bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("error creating NewRequestWithContext: %w", err)
 	}
@@ -83,5 +84,13 @@ func getAuthHeader(ctx context.Context, tg TokenGetter) (string, error) {
 	}
 
 	return fmt.Sprintf("Bearer %s", accessToken), nil
+
+}
+
+func (c *Client) Do(r *http.Request) (*http.Response, error) {
+	return c.baseClient.Do(r)
+}
+
+func (c *Client) Get(path string, id string) {
 
 }

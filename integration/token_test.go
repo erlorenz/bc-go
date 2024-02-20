@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	bcgo "github.com/erlorenz/bc-go"
+	bcgo "github.com/erlorenz/bc-go/bc"
 )
 
 func TestGetToken(t *testing.T) {

@@ -3,6 +3,7 @@ package bcgo
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"net/url"
 )
 
@@ -12,7 +13,7 @@ import (
 // share the authClient if they are using the same scope.
 type Client struct {
 	authClient TokenGetter
-	baseClient HTTPClient
+	baseClient *http.Client
 	baseURL    *url.URL
 	common     bool
 	config     ClientConfig

@@ -8,20 +8,13 @@ import (
 	"time"
 )
 
-// HTTPClient represents an HTTP client.
-// It is usually an *http.Client from the standard library.
-type HTTPClient interface {
-	// Do sends an HTTP request and returns an HTTP response.
-	Do(req *http.Request) (*http.Response, error)
-}
-
 // ClientOption modifies the ClientOptions struct.
 type ClientOptionFunc func(*ClientOptions)
 
 // ClientOptions represents optional configuration values
 // which are applied to the Client instead of using the defaults.
 type ClientOptions struct {
-	httpClient HTTPClient
+	httpClient *http.Client
 	logger     *slog.Logger
 }
 
@@ -35,7 +28,7 @@ func newClientOptions(optFuncs []ClientOptionFunc) *ClientOptions {
 	}
 
 	// Set defaults
-	options.httpClient = cmp.Or[HTTPClient](options.httpClient, &http.Client{Timeout: time.Second * 15})
+	options.httpClient = cmp.Or(options.httpClient, &http.Client{Timeout: time.Second * 15})
 	options.logger = cmp.Or(options.logger, slog.New(slog.NewJSONHandler(os.Stderr, nil)))
 
 	return options
@@ -49,7 +42,7 @@ func WithLogger(logger *slog.Logger) ClientOptionFunc {
 }
 
 // WithHTTPClient sets a client that meets the HTTPClient interface.
-func WithHTTPClient(httpClient HTTPClient) ClientOptionFunc {
+func WithHTTPClient(httpClient *http.Client) ClientOptionFunc {
 	return func(clientOptions *ClientOptions) {
 		clientOptions.httpClient = httpClient
 	}

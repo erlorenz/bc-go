@@ -23,11 +23,16 @@ func buildBaseURL(cfg ClientConfig) (*url.URL, error) {
 	return baseURL, nil
 }
 
-func buildRequestURL(baseURL url.URL, entitySet string, queryParams QueryParams) URLString {
+func buildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryParams QueryParams) url.URL {
 	newURL := baseURL
 	// Don't forget the slash in between
 	entitySetPath := "/" + entitySet
 	newURL.Path += entitySetPath
+
+	// Add recordID if exists
+	if recordID != "" {
+		newURL.Path += fmt.Sprintf("(%s)", recordID)
+	}
 
 	// Build query params
 	query := url.Values{}
@@ -36,7 +41,7 @@ func buildRequestURL(baseURL url.URL, entitySet string, queryParams QueryParams)
 	}
 	newURL.RawQuery = query.Encode()
 
-	return URLString(newURL.String())
+	return newURL
 }
 
 const pathIndexTenant = 2
