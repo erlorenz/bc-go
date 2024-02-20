@@ -18,10 +18,10 @@ func TestMakeRequestGetNoParams(t *testing.T) {
 	}
 
 	opts := MakeRequestOptions{
-		method:        http.MethodGet,
-		entitySetName: "fakeEntities",
-		queryParams:   nil,
-		body:          nil,
+		Method:        http.MethodGet,
+		EntitySetName: "fakeEntities",
+		QueryParams:   nil,
+		Body:          nil,
 	}
 
 	req, err := client.NewRequest(context.TODO(), opts)
@@ -69,10 +69,10 @@ func TestMakeRequestGetCommonEndpoint(t *testing.T) {
 	}
 
 	opts := MakeRequestOptions{
-		method:        http.MethodGet,
-		entitySetName: "fakeEntities",
-		queryParams:   nil,
-		body:          nil,
+		Method:        http.MethodGet,
+		EntitySetName: "fakeEntities",
+		QueryParams:   nil,
+		Body:          nil,
 	}
 
 	req, err := client.NewRequest(context.TODO(), opts)
@@ -110,9 +110,9 @@ func TestMakeRequestPost(t *testing.T) {
 	}
 
 	opts := MakeRequestOptions{
-		method:        http.MethodGet,
-		entitySetName: "fakeEntities",
-		body:          reqBody,
+		Method:        http.MethodGet,
+		EntitySetName: "fakeEntities",
+		Body:          reqBody,
 	}
 
 	req, err := client.NewRequest(context.TODO(), opts)
@@ -147,10 +147,10 @@ func TestMakeRequestGetParams(t *testing.T) {
 	want := "param1=value1&param2=value2"
 
 	opts := MakeRequestOptions{
-		method:        http.MethodGet,
-		entitySetName: "fakeEntities",
-		queryParams:   qp,
-		body:          nil,
+		Method:        http.MethodGet,
+		EntitySetName: "fakeEntities",
+		QueryParams:   qp,
+		Body:          nil,
 	}
 
 	req, err := client.NewRequest(context.TODO(), opts)
@@ -163,5 +163,4 @@ func TestMakeRequestGetParams(t *testing.T) {
 	if got != want {
 		t.Errorf("wanted %s, got %s", want, got)
 	}
-
 }

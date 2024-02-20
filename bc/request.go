@@ -18,11 +18,11 @@ var AcceptJSONNoMetadata = strings.Join([]string{ContentTypeJSON, NoODATAMetadat
 
 // MakeRequestOptions are the unique options for the http.Request.
 type MakeRequestOptions struct {
-	method        string
-	entitySetName string
-	recordID      GUID
-	queryParams   map[string]string
-	body          any
+	Method        string
+	EntitySetName string
+	RecordID      GUID
+	QueryParams   map[string]string
+	Body          any
 }
 
 // QueryParams are used to build the http.Request url.
@@ -33,16 +33,16 @@ type QueryParams map[string]string
 func (c *Client) NewRequest(ctx context.Context, opts MakeRequestOptions) (*http.Request, error) {
 
 	// Build the full URL string
-	newURL := buildRequestURL(*c.baseURL, opts.entitySetName, opts.recordID, opts.queryParams)
+	newURL := buildRequestURL(*c.baseURL, opts.EntitySetName, opts.RecordID, opts.QueryParams)
 
 	// Marshall JSON
-	body, err := json.Marshal(opts.body)
+	body, err := json.Marshal(opts.Body)
 	if err != nil {
-		return nil, fmt.Errorf("cannot marshal body %s: %w", opts.body, err)
+		return nil, fmt.Errorf("cannot marshal body %s: %w", opts.Body, err)
 	}
 
 	// Create Request
-	req, err := http.NewRequestWithContext(ctx, opts.method, newURL.String(), bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, opts.Method, newURL.String(), bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("error creating NewRequestWithContext: %w", err)
 	}
@@ -58,17 +58,17 @@ func (c *Client) NewRequest(ctx context.Context, opts MakeRequestOptions) (*http
 	req.Header.Set("Accept", AcceptJSONNoMetadata)
 
 	// Use ReadOnly for GET
-	if opts.method == http.MethodGet {
+	if opts.Method == http.MethodGet {
 		req.Header.Set("Data-Access-Intent", DataAccessReadOnly)
 	}
 
 	// Use JSON for POST, PUT, PATCH
-	if opts.method == http.MethodPost || opts.method == http.MethodPut || opts.method == http.MethodPatch {
+	if opts.Method == http.MethodPost || opts.Method == http.MethodPut || opts.Method == http.MethodPatch {
 		req.Header.Set("Content-Type", ContentTypeJSON)
 	}
 
 	// Use If-Match for requests that modify existing
-	if opts.method == http.MethodDelete || opts.method == http.MethodPut || opts.method == http.MethodPatch {
+	if opts.Method == http.MethodDelete || opts.Method == http.MethodPut || opts.Method == http.MethodPatch {
 		req.Header.Set("If-Match", "*")
 	}
 
