@@ -49,7 +49,7 @@ func TestParseBadDate(t *testing.T) {
 	}
 }
 
-func TestMarshal(t *testing.T) {
+func TestMarshalFromParseDate(t *testing.T) {
 
 	d, err := ParseDate("2024-02-18")
 	if err != nil {
@@ -61,7 +61,24 @@ func TestMarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "2024-02-18"
+	want := `"2024-02-18"`
+	got := string(b)
+
+	if got != want {
+		t.Errorf("wanted %s, got %s", want, got)
+	}
+}
+
+func TestMarshalFromDateOf(t *testing.T) {
+
+	d := DateOf(time.Now())
+
+	b, err := d.MarshalJSON()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `"2024-02-20"`
 	got := string(b)
 
 	if got != want {
@@ -73,17 +90,17 @@ func TestUnmarshal(t *testing.T) {
 
 	bytes := []byte(`{"date":"2024-02-18"}`)
 
-	var dstruct struct {
+	var dStruct struct {
 		Date Date `json:"date"`
 	}
 
-	err := json.Unmarshal(bytes, &dstruct)
+	err := json.Unmarshal(bytes, &dStruct)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := "2024-02-18"
-	got := dstruct.Date.String()
+	got := dStruct.Date.String()
 
 	if got != want {
 		t.Errorf("wanted %s, got %s", want, got)

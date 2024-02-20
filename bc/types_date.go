@@ -28,7 +28,7 @@ func DateOf(time time.Time) Date {
 
 // ParseDate transforms a string format 'YYYY-MM-DD' to a Date.
 func ParseDate(s string) (Date, error) {
-	// Trim out the quotes if it is json or something
+	// Trim out the quotes if it is json
 	s = strings.Trim(s, `"`)
 
 	t, err := time.Parse(time.DateOnly, s)
@@ -56,7 +56,11 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON just returns it as a string formatted 'YYYY-MM-DD'.
 func (d Date) MarshalJSON() ([]byte, error) {
-	return []byte(d.String()), nil
+
+	// Add the quotes
+	str := fmt.Sprintf(`"%s"`, d.String())
+
+	return []byte(str), nil
 }
 
 // IsZero returns true if the Date is set to the zero value.

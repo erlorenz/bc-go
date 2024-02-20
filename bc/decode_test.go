@@ -1,39 +1,27 @@
 package bc
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"testing"
 	"time"
 )
 
-var fakeErrorResponse = ErrorResponse{
-	Error: ODataError{"error_code", fmt.Sprintf("before_text  CorrelationId  %s.", validGUID)},
-}
-
-var invalidErrorResponse = struct {
-	Other string
-}{
-	Other: "other thing",
-}
-
-func newFakeBody(v any, t *testing.T) io.ReadCloser {
-	t.Helper()
-	b, err := json.Marshal(v)
-	if err != nil {
-		t.Fatalf("failed to marshall json in newFakeBody: %s", err)
+var validErrorResponseJSON = []byte(fmt.Sprintf(`{
+	"error": {
+  		"code": "error_code",
+  		"message": "before_text  CorrelationId  %s"
 	}
-	return io.NopCloser(bytes.NewBuffer(b))
-}
+}`, validGUID))
 
-func TestResponseToError(t *testing.T) {
+var invalidErrorResponseJSON = []byte(`{"other":"otherthing"}`)
 
-	fakeBody := newFakeBody(fakeErrorResponse, t)
-	fakeResponse := &http.Response{StatusCode: 400, Body: fakeBody}
+func TestMakeErrorFromResponse(t *testing.T) {
+
+	t.Logf("json: %s", validErrorResponseJSON)
+	fakeResponse := &http.Response{StatusCode: 400, Body: newReadCloser(validErrorResponseJSON)}
 
 	err := makeErrorFromResponse(fakeResponse)
 
@@ -46,11 +34,9 @@ func TestResponseToError(t *testing.T) {
 
 }
 
-func TestResponseErrorResponseInvalid(t *testing.T) {
+func TestMakeErrorFromResponseInvalid(t *testing.T) {
 
-	fakeBody := newFakeBody(invalidErrorResponse, t)
-
-	fakeResponse := &http.Response{StatusCode: 500, Body: fakeBody}
+	fakeResponse := &http.Response{StatusCode: 500, Body: newReadCloser(invalidErrorResponseJSON)}
 
 	err := makeErrorFromResponse(fakeResponse)
 
@@ -65,17 +51,78 @@ func TestResponseErrorResponseInvalid(t *testing.T) {
 }
 
 type fakeEntity struct {
-	id        GUID
-	quantity  int
-	createdAt time.Time
-	orderDate Date
+	ID              GUID
+	Quantity        int
+	CreatedDateTime time.Time
+	OrderDate       Date
+	PostingDate     Date
+	Number          string
 }
 
 func TestResponseData(t *testing.T) {
-	fakeRecordJSON := []byte(fmt.Sprintf(`{"id": "%s","quantity":5,"createdAt":"2023-10-27T16:53:02.397Z","orderDate":"2024-02-20"}`, validGUID))
-	body := io.NopCloser(bytes.NewBuffer(fakeRecordJSON))
+	fakeRecord := map[string]any{
+		"ID":              validGUID,
+		"Quantity":        5,
+		"CreatedDateTime": "2024-02-20T00:12:20.273Z",
+		"OrderDate":       "2024-02-20",
+		"PostingDate":     "2024-02-20",
+		"Number":          "NUMBER324234",
+	}
 
-	fakeResponse := &http.Response{StatusCode: 200, Body: body}
+	b, err := json.Marshal(fakeRecord)
+	if err != nil {
+		t.Fatalf("couldnt marshal: %s", err)
+	}
+
+	t.Logf("%s", b)
+
+	fakeResponse := &http.Response{StatusCode: 200, Body: newReadCloser(b)}
+
+	record, err := Decode[fakeEntity](fakeResponse)
+
+	t.Logf("%v", record)
+
+	if err != nil {
+		t.Fatalf("failed to decode valid body: %s", err)
+	}
+
+	if record.OrderDate.Day != 20 || record.OrderDate.Month != 2 || record.OrderDate.Year != 2024 {
+		t.Errorf("date not valid: %v", record)
+	}
+
+	if record.Quantity != 5 {
+		t.Errorf("quantity not valid: %v", record)
+	}
+
+	if record.CreatedDateTime.IsZero() {
+		t.Errorf("quantity not valid: %v", record)
+	}
+
+	if record.ID == "" {
+		t.Errorf("id not valid: %v", record)
+	}
+
+	if record.Number == "" {
+		t.Errorf("number not valid: %v", record)
+	}
+}
+
+func TestResponseDataInvalid(t *testing.T) {
+	fakeRecord := map[string]any{
+		"ID":              validGUID,
+		"Quantity":        5,
+		"CreatedDateTime": time.Now(),
+		"PostingDate":     "2024-02-20",
+		"OrderDate":       "2024-02-20",
+		"Number":          "NUMBER324234",
+	}
+
+	b, err := json.Marshal(fakeRecord)
+	if err != nil {
+		t.Fatalf("couldnt marshal: %s", err)
+	}
+
+	fakeResponse := &http.Response{StatusCode: 200, Body: newReadCloser(b)}
 
 	record, err := Decode[fakeEntity](fakeResponse)
 
@@ -83,19 +130,25 @@ func TestResponseData(t *testing.T) {
 		t.Fatalf("failed to decode valid body: %s", err)
 	}
 
-	if record.orderDate.Day != 20 || record.orderDate.Month != 2 || record.orderDate.Year != 2024 {
+	t.Logf("%+#v", record)
+
+	if record.OrderDate.Day != 20 || record.OrderDate.Month != 2 || record.OrderDate.Year != 2024 {
 		t.Errorf("date not valid: %v", record)
 	}
 
-	if record.quantity != 5 {
+	if record.Quantity != 5 {
 		t.Errorf("quantity not valid: %v", record)
 	}
 
-	if record.createdAt.IsZero() {
+	if record.CreatedDateTime.IsZero() {
 		t.Errorf("quantity not valid: %v", record)
 	}
 
-	if record.id == "" {
+	if record.ID == "" {
 		t.Errorf("id not valid: %v", record)
+	}
+
+	if record.Number == "" {
+		t.Errorf("number not valid: %v", record)
 	}
 }

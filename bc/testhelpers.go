@@ -1,6 +1,8 @@
 package bc
 
 import (
+	"bytes"
+	"io"
 	"testing"
 )
 
@@ -18,4 +20,8 @@ func RunTable[T comparable](table []TestNameGotWant[T], t *testing.T) {
 			}
 		})
 	}
+}
+
+func newReadCloser(b []byte) io.ReadCloser {
+	return io.NopCloser(bytes.NewBuffer(b))
 }

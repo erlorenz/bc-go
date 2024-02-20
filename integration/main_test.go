@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/erlorenz/bcgo/bc"
+	"github.com/erlorenz/bc-go/bc"
 	"github.com/joho/godotenv"
 )
 
