@@ -1,4 +1,4 @@
-module github.com/erlorenz/bc-go
+module github.com/erlorenz/bcgo
 
 go 1.22.0
 

@@ -7,23 +7,23 @@ import (
 	"testing"
 	"time"
 
-	bcgo "github.com/erlorenz/bc-go/bc"
+	"github.com/erlorenz/bcgo/bc"
 )
 
 func TestGetToken(t *testing.T) {
 
-	tenantID := bcgo.GUID(os.Getenv("TENANT_ID"))
-	clientID := bcgo.GUID(os.Getenv("CLIENT_ID"))
+	tenantID := bc.GUID(os.Getenv("TENANT_ID"))
+	clientID := bc.GUID(os.Getenv("CLIENT_ID"))
 	clientSecret := os.Getenv("CLIENT_SECRET")
 
-	params := bcgo.AuthParams{
+	params := bc.AuthParams{
 		TenantID:     tenantID,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Logger:       slog.Default(),
 	}
 
-	client, err := bcgo.NewAuthClient(params)
+	client, err := bc.NewAuthClient(params)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,5 +36,35 @@ func TestGetToken(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("Access token retrieved:", token)
+	t.Log("Access token retrieved, first 5:", token[:30])
+}
+
+func TestGetTokenTimeout(t *testing.T) {
+
+	tenantID := bc.GUID(os.Getenv("TENANT_ID"))
+	clientID := bc.GUID(os.Getenv("CLIENT_ID"))
+	clientSecret := os.Getenv("CLIENT_SECRET")
+	logger := slog.Default()
+
+	params := bc.AuthParams{
+		TenantID:     tenantID,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Logger:       logger,
+	}
+
+	client, err := bc.NewAuthClient(params)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*10)
+	defer cancel()
+
+	_, err = client.GetToken(ctx)
+	if err != nil {
+		return
+	}
+	t.Error("did not time out correctly, token received")
+
 }

@@ -1,23 +1,17 @@
-package bcgo
+package bc
 
 import (
-	"context"
 	"log/slog"
-	"os"
 	"testing"
-
-	"time"
-
-	"github.com/joho/godotenv"
 )
 
-const ValidGUID GUID = "ecd89ac3-1f77-48db-b42c-2640119cc69a"
+const validGUID GUID = "ecd89ac3-1f77-48db-b42c-2640119cc69a"
 
 func TestNewAuthClient(t *testing.T) {
 
 	goodParams := AuthParams{
-		TenantID:     ValidGUID,
-		ClientID:     ValidGUID,
+		TenantID:     validGUID,
+		ClientID:     validGUID,
 		ClientSecret: "TESTSECRET",
 		Logger:       slog.Default(),
 	}
@@ -57,36 +51,5 @@ func TestNewAuthClient(t *testing.T) {
 
 		})
 	}
-
-}
-
-func TestGetTokenTimeout(t *testing.T) {
-
-	godotenv.Load(".env")
-	tenantID := GUID(os.Getenv("TENANT_ID"))
-	clientID := GUID(os.Getenv("CLIENT_ID"))
-	clientSecret := os.Getenv("CLIENT_SECRET")
-	logger := slog.Default()
-
-	params := AuthParams{
-		TenantID:     tenantID,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Logger:       logger,
-	}
-
-	client, err := NewAuthClient(params)
-	if err != nil {
-		t.Error(err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*10)
-	defer cancel()
-
-	_, err = client.GetToken(ctx)
-	if err != nil {
-		return
-	}
-	t.Error("did not time out correctly, token received")
 
 }

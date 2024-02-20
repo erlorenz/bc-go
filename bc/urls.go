@@ -1,4 +1,4 @@
-package bcgo
+package bc
 
 import (
 	"fmt"
@@ -44,14 +44,14 @@ func buildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryPara
 	return newURL
 }
 
-const pathIndexTenant = 2
-const pathIndexEnvironment = 3
-const pathIndexPublisher = 5
-const pathIndexGroup = 6
-const pathIndexVersion = 7
-const pathIndexCompaniesSegment = 8
+// const pathIndexTenant = 2
+// const pathIndexEnvironment = 3
+// const pathIndexPublisher = 5
+// const pathIndexGroup = 6
+// const pathIndexVersion = 7
+// const pathIndexCompaniesSegment = 8
 const pathIndexEntitySetName = 9
 
-const pathIndexCommonVersion = 3
-const pathIndexCommonCompaniesSegment = 6
+// const pathIndexCommonVersion = 3
+// const pathIndexCommonCompaniesSegment = 6
 const pathIndexCommonEntitySetName = 7

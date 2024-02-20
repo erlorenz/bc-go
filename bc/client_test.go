@@ -1,4 +1,4 @@
-package bcgo
+package bc
 
 import (
 	"context"
@@ -14,10 +14,10 @@ func (ac *fakeTokenGetter) GetToken(context.Context) (AccessToken, error) {
 var fakeToken = &fakeTokenGetter{}
 
 var fakeConfig = ClientConfig{
-	TenantID:    ValidGUID,
+	TenantID:    validGUID,
 	Environment: "Sandbox",
 	APIEndpoint: "publisher/group/1.0",
-	CompanyID:   ValidGUID,
+	CompanyID:   validGUID,
 }
 
 func TestNewClient(t *testing.T) {

@@ -1,4 +1,4 @@
-package bcgo
+package bc
 
 import (
 	"encoding/json"

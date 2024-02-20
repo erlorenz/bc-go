@@ -1,4 +1,4 @@
-package bcgo
+package bc
 
 import (
 	"fmt"
@@ -7,10 +7,10 @@ import (
 
 func TestBuildBaseURLCommon(t *testing.T) {
 	config := ClientConfig{
-		TenantID:    ValidGUID,
+		TenantID:    validGUID,
 		Environment: "TEST",
 		APIEndpoint: "v2.0",
-		CompanyID:   ValidGUID,
+		CompanyID:   validGUID,
 	}
 	url, err := buildBaseURL(config)
 	if err != nil {
@@ -18,7 +18,7 @@ func TestBuildBaseURLCommon(t *testing.T) {
 	}
 
 	t.Run("TestPath", func(t *testing.T) {
-		want := fmt.Sprintf("/v2.0/%s/TEST/api/v2.0/companies(%s)", ValidGUID, ValidGUID)
+		want := fmt.Sprintf("/v2.0/%s/TEST/api/v2.0/companies(%s)", validGUID, validGUID)
 		got := url.Path
 		if want != got {
 			t.Errorf("wanted %s, got %s", want, got)
@@ -43,10 +43,10 @@ func TestBuildBaseURLCommon(t *testing.T) {
 
 func TestBuildBaseURLExt(t *testing.T) {
 	config := ClientConfig{
-		TenantID:    ValidGUID,
+		TenantID:    validGUID,
 		Environment: "TEST",
 		APIEndpoint: "publisher/group/version",
-		CompanyID:   ValidGUID,
+		CompanyID:   validGUID,
 	}
 	url, err := buildBaseURL(config)
 	if err != nil {
@@ -54,7 +54,7 @@ func TestBuildBaseURLExt(t *testing.T) {
 	}
 
 	t.Run("TestPath", func(t *testing.T) {
-		want := fmt.Sprintf("/v2.0/%s/TEST/api/publisher/group/version/companies(%s)", ValidGUID, ValidGUID)
+		want := fmt.Sprintf("/v2.0/%s/TEST/api/publisher/group/version/companies(%s)", validGUID, validGUID)
 		got := url.Path
 		if want != got {
 			t.Errorf("wanted %s, got %s", want, got)

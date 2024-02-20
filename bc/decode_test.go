@@ -1,4 +1,4 @@
-package bcgo
+package bc
 
 import (
 	"bytes"
@@ -8,10 +8,11 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 )
 
 var fakeErrorResponse = ErrorResponse{
-	Error: ODataError{"error_code", fmt.Sprintf("before_text  CorrelationId  %s.", ValidGUID)},
+	Error: ODataError{"error_code", fmt.Sprintf("before_text  CorrelationId  %s.", validGUID)},
 }
 
 var invalidErrorResponse = struct {
@@ -61,4 +62,40 @@ func TestResponseErrorResponseInvalid(t *testing.T) {
 
 	// t.Errorf("failed making error from response: %s", err)
 
+}
+
+type fakeEntity struct {
+	id        GUID
+	quantity  int
+	createdAt time.Time
+	orderDate Date
+}
+
+func TestResponseData(t *testing.T) {
+	fakeRecordJSON := []byte(fmt.Sprintf(`{"id": "%s","quantity":5,"createdAt":"2023-10-27T16:53:02.397Z","orderDate":"2024-02-20"}`, validGUID))
+	body := io.NopCloser(bytes.NewBuffer(fakeRecordJSON))
+
+	fakeResponse := &http.Response{StatusCode: 200, Body: body}
+
+	record, err := Decode[fakeEntity](fakeResponse)
+
+	if err != nil {
+		t.Fatalf("failed to decode valid body: %s", err)
+	}
+
+	if record.orderDate.Day != 20 || record.orderDate.Month != 2 || record.orderDate.Year != 2024 {
+		t.Errorf("date not valid: %v", record)
+	}
+
+	if record.quantity != 5 {
+		t.Errorf("quantity not valid: %v", record)
+	}
+
+	if record.createdAt.IsZero() {
+		t.Errorf("quantity not valid: %v", record)
+	}
+
+	if record.id == "" {
+		t.Errorf("id not valid: %v", record)
+	}
 }

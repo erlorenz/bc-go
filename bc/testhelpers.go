@@ -1,4 +1,4 @@
-package bcgo
+package bc
 
 import (
 	"testing"
@@ -9,8 +9,6 @@ type TestNameGotWant[T comparable] struct {
 	got  T
 	want T
 }
-
-const EmptyString = ""
 
 func RunTable[T comparable](table []TestNameGotWant[T], t *testing.T) {
 	for _, v := range table {
