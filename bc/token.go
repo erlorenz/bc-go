@@ -36,14 +36,14 @@ func NewAuthClient(tenantID GUID, clientID GUID, clientSecret string, logger *sl
 	// Validate config values
 	if err := validateParams(tenantID, clientID, clientSecret); err != nil {
 		err = fmt.Errorf("params validation error: %w", err)
-		logger.Error("validate params error", "error", err.Error())
+		logger.Debug("validate params error", "error", err.Error())
 		return nil, err
 	}
 
 	cred, err := confidential.NewCredFromSecret(clientSecret)
 	if err != nil {
 		err = fmt.Errorf("NewCredFromSecret error: %w", err)
-		logger.Error("NewCredFromSecret error", "error", err.Error())
+		logger.Debug("NewCredFromSecret error", "error", err.Error())
 		return nil, err
 	}
 
@@ -52,7 +52,7 @@ func NewAuthClient(tenantID GUID, clientID GUID, clientSecret string, logger *sl
 	confidentialClient, err := confidential.New(authority, string(clientID), cred)
 	if err != nil {
 		err = fmt.Errorf("new confidentialClient error: %w", err)
-		logger.Error("new confidentialClient error", "error", err.Error())
+		logger.Debug("new confidentialClient error", "error", err.Error())
 		return nil, err
 	}
 

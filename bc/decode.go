@@ -47,13 +47,17 @@ func newBCServerError(err ODataError, statusCode int) BCServerError {
 	}
 }
 
-// Decodes the http.Response into either an error or the type provided.
+// Decodes the http.Response into either an error or type T.
+// The error can be inspected with errors.As to check if it is a
+// BCServerError or an error during decoding.
 func Decode[T Validator](r *http.Response) (T, error) {
 
+	// Instantiate the generic data type early so it's zero
+	// value can be returned if there is an error
 	var data T
 
+	// If error status call makeFromErrorResponse() to return an error
 	if r.StatusCode < 200 || r.StatusCode >= 300 {
-		// If error status call makeFromErrorResponse() to return an error
 		err := makeErrorFromResponse(r)
 		return data, err
 	}
@@ -67,7 +71,7 @@ func Decode[T Validator](r *http.Response) (T, error) {
 	// Validate
 	err = data.Validate()
 	if err != nil {
-		return data, fmt.Errorf("error validating type: %w", err)
+		return data, fmt.Errorf("failed validation of %T: %w", data, err)
 	}
 
 	return data, nil

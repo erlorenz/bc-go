@@ -7,22 +7,35 @@ import (
 	"net/http"
 )
 
+// APIPage represents an API page in Business Central.
+// It has the CRUD methods as well as a List method that returns
+// a list of entities[T].
+// Set a base filter with SetBaseFilter and an expand string with
+// SetBaseExpand.
 type APIPage[T Validator] struct {
 	entitySetName string
 	baseFilter    string
 	client        Client
-	expand        string
+	baseExpand    string
 }
 
-func (a *APIPage[T]) SetExpand(expand string) {
-	a.expand = expand
+func (a *APIPage[T]) SetBaseExpand(expand string) {
+	a.baseExpand = expand
 }
 
 func (a *APIPage[T]) SetBaseFilter(filter string) {
 	a.baseFilter = filter
 }
 
-func (a *APIPage[T]) Get(ctx context.Context, id GUID) (T, error) {
+type APIPageQueryOptions struct {
+	filter  string
+	expand  string
+	orderby string
+	top     int
+	skip    int
+}
+
+func (a *APIPage[T]) Get(ctx context.Context, id GUID, qopts APIPageQueryOptions) (T, error) {
 	var v T
 	opts := MakeRequestOptions{
 		Method:        http.MethodGet,
