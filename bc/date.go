@@ -1,15 +1,15 @@
 package bc
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 )
 
 // Date represents a Date type in Business Central.
 // It has no time zone associated with so does not represent a unique moment.
 // When converting a time.Time to this Date make sure that it is set with the correct time.Location.
-// It can be marshalled and unmarshalled and meets the Stringer interface.
+// It can be marshaled and unmarshaled and satisfies the Stringer interface.
 // Heavily inspired by the civil package:
 // https://github.com/googleapis/google-cloud-go/blob/v0.112.0/civil/civil.go
 type Date struct {
@@ -28,12 +28,10 @@ func DateOf(time time.Time) Date {
 
 // ParseDate transforms a string format 'YYYY-MM-DD' to a Date.
 func ParseDate(s string) (Date, error) {
-	// Trim out the quotes if it is json
-	s = strings.Trim(s, `"`)
 
 	t, err := time.Parse(time.DateOnly, s)
 	if err != nil {
-		return Date{}, err
+		return Date{}, fmt.Errorf("failed to parse time: %w", err)
 	}
 	return DateOf(t), nil
 }
@@ -45,7 +43,14 @@ func (d Date) String() string {
 
 // UnmarshalJSON takes the date string (formatted 'YYYY-MM-DD') and converts it to a Date.
 func (d *Date) UnmarshalJSON(data []byte) error {
-	date, err := ParseDate(string(data))
+	// Unmarshal as string
+	var v string
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal into string: %w", err)
+	}
+
+	date, err := ParseDate(v)
 	if err != nil {
 		return err
 	}
@@ -57,10 +62,13 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 // MarshalJSON just returns it as a string formatted 'YYYY-MM-DD'.
 func (d Date) MarshalJSON() ([]byte, error) {
 
-	// Add the quotes
-	str := fmt.Sprintf(`"%s"`, d.String())
+	// Marshal as string
+	b, err := json.Marshal(d.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal Date: %w", err)
+	}
 
-	return []byte(str), nil
+	return b, nil
 }
 
 // IsZero returns true if the Date is set to the zero value.

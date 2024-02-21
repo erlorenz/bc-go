@@ -71,7 +71,8 @@ func TestMarshalFromParseDate(t *testing.T) {
 
 func TestMarshalFromDateOf(t *testing.T) {
 
-	d := DateOf(time.Now())
+	dt := time.Date(2024, time.February, 20, 0, 0, 0, 0, time.UTC)
+	d := DateOf(dt)
 
 	b, err := d.MarshalJSON()
 	if err != nil {

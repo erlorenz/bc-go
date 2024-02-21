@@ -1,7 +1,6 @@
 package bc
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"unicode/utf8"
@@ -26,15 +25,6 @@ func (u URLString) Validate() error {
 	_, err := url.ParseRequestURI(string(u))
 	if err != nil {
 		return fmt.Errorf("'%s' is not valid URL", u)
-	}
-	return nil
-}
-
-type NotEmptyString string
-
-func (s NotEmptyString) Validate() error {
-	if len(s) == 0 {
-		return errors.New("is empty")
 	}
 	return nil
 }

@@ -32,24 +32,6 @@ func TestURLStringValidate(t *testing.T) {
 
 }
 
-func TestNotEmptyString(t *testing.T) {
-	empty := NotEmptyString("")
-	t.Run("Empty", func(t *testing.T) {
-		err := empty.Validate()
-		if err == nil {
-			t.Errorf("did not error on empty string")
-		}
-	})
-
-	notempty := NotEmptyString("NOTEMPTY")
-	t.Run("NotEmpty", func(t *testing.T) {
-		err := notempty.Validate()
-		if err != nil {
-			t.Error(err)
-		}
-	})
-
-}
 func TestGUID(t *testing.T) {
 	empty := GUID("")
 	t.Run("Empty", func(t *testing.T) {
