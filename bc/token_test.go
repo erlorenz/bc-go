@@ -1,7 +1,6 @@
 package bc
 
 import (
-	"log/slog"
 	"testing"
 )
 
@@ -9,40 +8,30 @@ const validGUID GUID = "ecd89ac3-1f77-48db-b42c-2640119cc69a"
 
 func TestNewAuthClient(t *testing.T) {
 
-	goodParams := AuthParams{
-		TenantID:     validGUID,
-		ClientID:     validGUID,
-		ClientSecret: "TESTSECRET",
-		Logger:       slog.Default(),
+	type params struct {
+		tenantID     GUID
+		clientID     GUID
+		clientSecret string
 	}
 
-	badGUIDParams := goodParams
-	badGUIDParams.ClientID = "BAD"
-
-	badSecretParams := goodParams
-	badSecretParams.ClientSecret = ""
-
-	multipleBadParams := badGUIDParams
-	multipleBadParams.ClientSecret = ""
-	multipleBadParams.TenantID = ""
-
-	testTable := map[string]struct {
-		params    AuthParams
-		wantError bool
+	// false if error, true if success
+	table := []struct {
+		name   string
+		params params
+		want   bool
 	}{
-		"GoodParams":  {goodParams, false},
-		"BadGUID":     {badGUIDParams, true},
-		"BadSecret":   {badSecretParams, true},
-		"MultipleBad": {multipleBadParams, true},
+		{"GoodParams", params{validGUID, validGUID, "TEST"}, true},
+		{"BadClientSecret", params{validGUID, validGUID, ""}, false},
+		{"AllBad", params{"", "", ""}, false},
 	}
 
-	for k, v := range testTable {
-		t.Run(k, func(t *testing.T) {
-			_, err := NewAuthClient(v.params)
-
-			gotError := err != nil
-			if v.wantError != gotError {
-				if v.wantError == false {
+	for _, v := range table {
+		t.Run(v.name, func(t *testing.T) {
+			_, err := NewAuthClient(v.params.tenantID, v.params.clientID, v.params.clientSecret, nil)
+			want := v.want
+			got := err == nil
+			if want != got {
+				if want == false {
 					t.Errorf("expected no error, got %s", err)
 					return
 				}

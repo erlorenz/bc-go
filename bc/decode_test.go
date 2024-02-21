@@ -59,6 +59,13 @@ type fakeEntity struct {
 	Number          string
 }
 
+func (f fakeEntity) Validate() error {
+	if f.ID == "" {
+		return errors.New("validation error: ID is empty")
+	}
+	return nil
+}
+
 func TestResponseData(t *testing.T) {
 	fakeRecord := map[string]any{
 		"ID":              validGUID,

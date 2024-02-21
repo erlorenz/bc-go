@@ -30,16 +30,6 @@ type ClientConfig struct {
 
 // Validates that the params are all in correct format.
 func (p ClientConfig) Validate() error {
-	err := ValidatorMap{
-		"TenantID":    p.TenantID,
-		"CompanyID":   p.CompanyID,
-		"Environment": NotEmptyString(p.Environment),
-		"APIEndpoint": NotEmptyString(p.APIEndpoint),
-	}.Validate()
-
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

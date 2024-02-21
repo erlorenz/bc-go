@@ -2,7 +2,6 @@ package integration
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -11,19 +10,9 @@ import (
 )
 
 func TestGetToken(t *testing.T) {
+	envs := getEnvs(t)
 
-	tenantID := bc.GUID(os.Getenv("TENANT_ID"))
-	clientID := bc.GUID(os.Getenv("CLIENT_ID"))
-	clientSecret := os.Getenv("CLIENT_SECRET")
-
-	params := bc.AuthParams{
-		TenantID:     tenantID,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Logger:       slog.Default(),
-	}
-
-	client, err := bc.NewAuthClient(params)
+	client, err := bc.NewAuthClient(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +25,7 @@ func TestGetToken(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("Access token retrieved, first 5:", token[:30])
+	t.Log("Access token retrieved:", token)
 }
 
 func TestGetTokenTimeout(t *testing.T) {
@@ -44,18 +33,10 @@ func TestGetTokenTimeout(t *testing.T) {
 	tenantID := bc.GUID(os.Getenv("TENANT_ID"))
 	clientID := bc.GUID(os.Getenv("CLIENT_ID"))
 	clientSecret := os.Getenv("CLIENT_SECRET")
-	logger := slog.Default()
 
-	params := bc.AuthParams{
-		TenantID:     tenantID,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Logger:       logger,
-	}
-
-	client, err := bc.NewAuthClient(params)
+	client, err := bc.NewAuthClient(tenantID, clientID, clientSecret, nil)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*10)

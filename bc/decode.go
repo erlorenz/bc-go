@@ -48,22 +48,29 @@ func newBCServerError(err ODataError, statusCode int) BCServerError {
 }
 
 // Decodes the http.Response into either an error or the type provided.
-func Decode[T any](r *http.Response) (T, error) {
+func Decode[T Validator](r *http.Response) (T, error) {
 
 	var data T
-	if r.StatusCode >= 200 && r.StatusCode < 300 {
 
-		// Decode JSON into provided type if OK status
-		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			return data, fmt.Errorf("could not decode %T: %w", data, err)
-		}
-		return data, nil
+	if r.StatusCode < 200 || r.StatusCode >= 300 {
+		// If error status call makeFromErrorResponse() to return an error
+		err := makeErrorFromResponse(r)
+		return data, err
 	}
 
-	// If error status call makeFromErrorResponse() to return an error
-	err := makeErrorFromResponse(r)
+	// Decode JSON into provided type if OK status
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		return data, fmt.Errorf("could not decode %T: %w", data, err)
+	}
 
-	return data, err
+	// Validate
+	err = data.Validate()
+	if err != nil {
+		return data, fmt.Errorf("error validating type: %w", err)
+	}
+
+	return data, nil
 
 }
 

@@ -1,9 +1,11 @@
 package bc
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 )
@@ -16,28 +18,6 @@ type AuthClient struct {
 	logger *slog.Logger
 }
 
-// AuthParams are used to create an AuthClient. Implements the Validator interface.
-type AuthParams struct {
-	TenantID     GUID
-	ClientID     GUID
-	ClientSecret string
-	Logger       *slog.Logger
-}
-
-func (p AuthParams) Validate() error {
-
-	err := ValidatorMap{
-		"TenantID":     p.TenantID,
-		"ClientID":     p.ClientID,
-		"ClientSecret": NotEmptyString(p.ClientSecret),
-	}.Validate()
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // AccessToken is used in the Authorization header of requests.
 type AccessToken string
 
@@ -48,23 +28,32 @@ type TokenGetter interface {
 }
 
 // NewAuthClient validates the AuthParams and creates a new AuthClient.
-func NewAuthClient(config AuthParams) (*AuthClient, error) {
+func NewAuthClient(tenantID GUID, clientID GUID, clientSecret string, logger *slog.Logger) (*AuthClient, error) {
+
+	// Use default logger if none provided
+	logger = cmp.Or(logger, slog.Default())
 
 	// Validate config values
-	if err := config.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating AuthParams: [%w]", err)
+	if err := validateParams(tenantID, clientID, clientSecret); err != nil {
+		err = fmt.Errorf("params validation error: %w", err)
+		logger.Error("validate params error", "error", err.Error())
+		return nil, err
 	}
 
-	cred, err := confidential.NewCredFromSecret(config.ClientSecret)
+	cred, err := confidential.NewCredFromSecret(clientSecret)
 	if err != nil {
-		return nil, fmt.Errorf("error creating MSAL confidential.Credential: %w", err)
+		err = fmt.Errorf("NewCredFromSecret error: %w", err)
+		logger.Error("NewCredFromSecret error", "error", err.Error())
+		return nil, err
 	}
 
-	authority := "https://login.microsoft.com/" + string(config.TenantID)
+	authority := "https://login.microsoft.com/" + string(tenantID)
 
-	confidentialClient, err := confidential.New(authority, string(config.ClientID), cred)
+	confidentialClient, err := confidential.New(authority, string(clientID), cred)
 	if err != nil {
-		return nil, fmt.Errorf("error creating MSAL confidential.Client: %w", err)
+		err = fmt.Errorf("new confidentialClient error: %w", err)
+		logger.Error("new confidentialClient error", "error", err.Error())
+		return nil, err
 	}
 
 	// Don't think there is any reason to use a different one.
@@ -74,7 +63,7 @@ func NewAuthClient(config AuthParams) (*AuthClient, error) {
 	return &AuthClient{
 		client: confidentialClient,
 		scopes: scopes,
-		logger: config.Logger,
+		logger: logger,
 	}, nil
 
 }
@@ -94,4 +83,21 @@ func (ac *AuthClient) GetToken(ctx context.Context) (AccessToken, error) {
 	}
 	ac.logger.Debug("Successfully acquired token.")
 	return AccessToken(result.AccessToken), nil
+}
+
+func validateParams(tenantID GUID, clientID GUID, clientSecret string) error {
+	problems := []string{}
+	if err := tenantID.Validate(); err != nil {
+		problems = append(problems, fmt.Errorf("tenantID invalid (%w)", err).Error())
+	}
+	if err := clientID.Validate(); err != nil {
+		problems = append(problems, fmt.Errorf("clientID invalid (%w)", err).Error())
+	}
+	if clientSecret == "" {
+		problems = append(problems, "clientSecret invalid (is empty)")
+	}
+	if len(problems) > 0 {
+		return fmt.Errorf(strings.Join(problems, ", "))
+	}
+	return nil
 }
