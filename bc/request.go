@@ -21,7 +21,7 @@ type MakeRequestOptions struct {
 	Method        string
 	EntitySetName string
 	RecordID      GUID
-	QueryParams   map[string]string
+	QueryParams   QueryParams
 	Body          any
 }
 

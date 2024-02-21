@@ -5,8 +5,11 @@ test/all:
 	go test -v -race  ./...
 
 test/int:
-	go test -v  "github.com/erlorenz/bc-go/integration"
+	go test "github.com/erlorenz/bc-go/integration"
+
+test/int/v:
+	go test -v -race "github.com/erlorenz/bc-go/integration"
 
 
-.PHONY: test, test/all, test/int
+.PHONY: test, test/all, test/int, test/int/v
 
