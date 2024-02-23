@@ -22,15 +22,20 @@ type Client struct {
 
 // The manadatory configuration params for the Client.
 type ClientConfig struct {
-	TenantID    GUID
-	CompanyID   GUID
-	Environment string
-	APIEndpoint string
+	TenantID    GUID   `validate:"required,uuid"`
+	CompanyID   GUID   `validate:"required,uuid"`
+	Environment string `validate:"required"`
+	APIEndpoint string `validate:"required"`
 }
 
 // Validates that the params are all in correct format.
 func (p ClientConfig) Validate() error {
-	return nil
+	err := validateStruct(p)
+	if err != nil {
+		// TODO: make the format nicer
+		return err
+	}
+	return err
 }
 
 // New client takes the mandatory ClientConfig params, a TokenGetter, and
@@ -40,11 +45,8 @@ func NewClient(config ClientConfig, authClient TokenGetter, opts ...ClientOption
 
 	// Validate params
 	if err := config.Validate(); err != nil {
-		return nil, fmt.Errorf("error validating ClientParams: %w", err)
+		return nil, fmt.Errorf("validation error: \n%w", err)
 	}
-
-	// Create ClientOptions and set them from opts
-	options := newClientOptions(opts)
 
 	// Check if it is a common endpoint (v2.0 for now)
 	// Common endpoints have different path structure
@@ -54,13 +56,14 @@ func NewClient(config ClientConfig, authClient TokenGetter, opts ...ClientOption
 	client := &Client{
 		authClient: authClient,
 		config:     config,
-		logger:     options.logger,
-		baseClient: options.httpClient,
 		common:     common,
 	}
 
+	// Range through the options and set them to the client
+	setClientOptions(client, opts)
+
 	// Create the base URL
-	baseURL, err := buildBaseURL(config)
+	baseURL, err := BuildBaseURL(config)
 	if err != nil {
 		return nil, err
 	}
@@ -83,4 +86,14 @@ func (c *Client) IsCommon() bool {
 // Config returns ClientConfig for this instance.
 func (c *Client) Config() ClientConfig {
 	return c.config
+}
+
+// BaseClient returns the baseClient *http.Client.
+func (c *Client) BaseClient() *http.Client {
+	return c.baseClient
+}
+
+// BaseClient returns the logger *slog.Logger.
+func (c *Client) Logger() *slog.Logger {
+	return c.logger
 }

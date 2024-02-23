@@ -1,16 +1,16 @@
-package bc
+package bc_test
 
 import (
 	"testing"
-)
 
-const validGUID GUID = "ecd89ac3-1f77-48db-b42c-2640119cc69a"
+	"github.com/erlorenz/bc-go/bc"
+)
 
 func TestNewAuthClient(t *testing.T) {
 
 	type params struct {
-		tenantID     GUID
-		clientID     GUID
+		tenantID     bc.GUID
+		clientID     bc.GUID
 		clientSecret string
 	}
 
@@ -27,7 +27,7 @@ func TestNewAuthClient(t *testing.T) {
 
 	for _, v := range table {
 		t.Run(v.name, func(t *testing.T) {
-			_, err := NewAuthClient(v.params.tenantID, v.params.clientID, v.params.clientSecret, nil)
+			_, err := bc.NewAuth(v.params.tenantID, v.params.clientID, v.params.clientSecret, nil)
 			want := v.want
 			got := err == nil
 			if want != got {

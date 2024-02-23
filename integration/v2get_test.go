@@ -34,7 +34,7 @@ func TestAPIPageGetV2(t *testing.T) {
 	envs := getEnvs(t)
 
 	ctx := context.Background()
-	authClient, err := bc.NewAuthClient(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
+	authClient, err := bc.NewAuth(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestAPIPageListV2(t *testing.T) {
 	envs := getEnvs(t)
 
 	ctx := context.Background()
-	authClient, err := bc.NewAuthClient(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
+	authClient, err := bc.NewAuth(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

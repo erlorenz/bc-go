@@ -13,7 +13,7 @@ func TestListSalesOrdersV2(t *testing.T) {
 	envs := getEnvs(t)
 
 	ctx := context.Background()
-	authClient, err := bc.NewAuthClient(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
+	authClient, err := bc.NewAuth(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestListSalesOrdersV2(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := bc.MakeRequestOptions{
+	opts := bc.RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: "salesOrders",
 	}

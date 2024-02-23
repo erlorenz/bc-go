@@ -10,9 +10,9 @@ import (
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 )
 
-// AuthClient is used to retrieve an AccessToken.
+// Auth is used to retrieve an AccessToken.
 // Implements the TokenGetter interface.
-type AuthClient struct {
+type Auth struct {
 	client confidential.Client
 	scopes []string
 	logger *slog.Logger
@@ -27,8 +27,8 @@ type TokenGetter interface {
 	GetToken(context.Context) (AccessToken, error)
 }
 
-// NewAuthClient validates the AuthParams and creates a new AuthClient.
-func NewAuthClient(tenantID GUID, clientID GUID, clientSecret string, logger *slog.Logger) (*AuthClient, error) {
+// NewAuth validates the AuthParams and creates a new AuthClient.
+func NewAuth(tenantID GUID, clientID GUID, clientSecret string, logger *slog.Logger) (*Auth, error) {
 
 	// Use default logger if none provided
 	logger = cmp.Or(logger, slog.Default())
@@ -60,7 +60,7 @@ func NewAuthClient(tenantID GUID, clientID GUID, clientSecret string, logger *sl
 	// Can have this as a config param if ever need to.
 	scopes := []string{"https://api.businesscentral.dynamics.com/.default"}
 
-	return &AuthClient{
+	return &Auth{
 		client: confidentialClient,
 		scopes: scopes,
 		logger: logger,
@@ -68,7 +68,7 @@ func NewAuthClient(tenantID GUID, clientID GUID, clientSecret string, logger *sl
 
 }
 
-func (ac *AuthClient) GetToken(ctx context.Context) (AccessToken, error) {
+func (ac *Auth) GetToken(ctx context.Context) (AccessToken, error) {
 
 	ac.logger.Debug("Acquiring token...")
 	result, err := ac.client.AcquireTokenSilent(ctx, ac.scopes)

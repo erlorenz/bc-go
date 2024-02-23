@@ -5,8 +5,8 @@ import (
 	"net/url"
 )
 
-// buildBaseURL builds the BaseURL from the ClientConfig.
-func buildBaseURL(cfg ClientConfig) (*url.URL, error) {
+// BuildBaseURL builds the BaseURL from the ClientConfig.
+func BuildBaseURL(cfg ClientConfig) (*url.URL, error) {
 	// All BC APIs use this
 	staticURL := "https://api.businesscentral.dynamics.com/v2.0"
 
@@ -23,7 +23,8 @@ func buildBaseURL(cfg ClientConfig) (*url.URL, error) {
 	return baseURL, nil
 }
 
-func buildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryParams QueryParams) url.URL {
+func BuildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryParams QueryParams) url.URL {
+
 	newURL := baseURL
 	// Don't forget the slash in between
 	entitySetPath := "/" + entitySet
@@ -43,15 +44,3 @@ func buildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryPara
 
 	return newURL
 }
-
-// const pathIndexTenant = 2
-// const pathIndexEnvironment = 3
-// const pathIndexPublisher = 5
-// const pathIndexGroup = 6
-// const pathIndexVersion = 7
-// const pathIndexCompaniesSegment = 8
-const pathIndexEntitySetName = 9
-
-// const pathIndexCommonVersion = 3
-// const pathIndexCommonCompaniesSegment = 6
-const pathIndexCommonEntitySetName = 7

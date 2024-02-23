@@ -1,18 +1,20 @@
-package bc
+package bc_test
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/erlorenz/bc-go/bc"
 )
 
 func TestBuildBaseURLCommon(t *testing.T) {
-	config := ClientConfig{
+	config := bc.ClientConfig{
 		TenantID:    validGUID,
 		Environment: "TEST",
 		APIEndpoint: "v2.0",
 		CompanyID:   validGUID,
 	}
-	url, err := buildBaseURL(config)
+	url, err := bc.BuildBaseURL(config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,13 +44,13 @@ func TestBuildBaseURLCommon(t *testing.T) {
 }
 
 func TestBuildBaseURLExt(t *testing.T) {
-	config := ClientConfig{
+	config := bc.ClientConfig{
 		TenantID:    validGUID,
 		Environment: "TEST",
 		APIEndpoint: "publisher/group/version",
 		CompanyID:   validGUID,
 	}
-	url, err := buildBaseURL(config)
+	url, err := bc.BuildBaseURL(config)
 	if err != nil {
 		t.Fatal(err)
 	}

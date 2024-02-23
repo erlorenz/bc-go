@@ -59,7 +59,7 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 		qp["$expand"] = strings.Join(expand, ",")
 	}
 
-	opts := MakeRequestOptions{
+	opts := RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: a.entitySetName,
 		RecordID:      id,
@@ -76,7 +76,7 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 	}
 
 	v, err = Decode[T](res)
-	var bcErr BCServerError
+	var bcErr ServerError
 	if err != nil {
 		if errors.As(err, &bcErr) {
 			return v, fmt.Errorf("error from server: %w", err)
@@ -96,7 +96,7 @@ func (a *APIPage[T]) List(ctx context.Context, queryOpts ListQueryOptions) ([]T,
 		return v, fmt.Errorf("failed at BuildQueryParams: %w", err)
 	}
 
-	opts := MakeRequestOptions{
+	opts := RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: a.entitySetName,
 		QueryParams:   qp,

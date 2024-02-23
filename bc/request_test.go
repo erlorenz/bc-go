@@ -1,4 +1,4 @@
-package bc
+package bc_test
 
 import (
 	"bytes"
@@ -8,16 +8,19 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/erlorenz/bc-go/bc"
+	"github.com/erlorenz/bc-go/bctest"
 )
 
 func TestMakeRequestGetNoParams(t *testing.T) {
 
-	client, err := NewClient(fakeConfig, fakeToken)
+	client, err := bc.NewClient(fakeConfig, &fakeTokenGetter{})
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}
 
-	opts := MakeRequestOptions{
+	opts := bc.RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: "fakeEntities",
 		QueryParams:   nil,
@@ -36,26 +39,35 @@ func TestMakeRequestGetNoParams(t *testing.T) {
 			t.Fatalf("failed reading body into buffer")
 		}
 		got := buf.String()
-		want := EmptyString
+		want := bctest.EmptyString
 		if got != want {
 			t.Errorf("got %s, wanted %s", got, want)
 		}
 
 	})
 	// Table of all request pieces
-	table := []TestNameGotWant[string]{
+	type testStruct struct {
+		name string
+		got  any
+		want any
+	}
+	table := []testStruct{
 		{"Method", req.Method, "GET"},
-		{"Query", req.URL.RawQuery, EmptyString},
+		{"Query", req.URL.RawQuery, bctest.EmptyString},
 		// Get values and join together with separator so multiple values under same key fail
-		{"Header_Accept", strings.Join(req.Header.Values("Accept"), "--"), AcceptJSONNoMetadata},
-		{"Header_ContentType", strings.Join(req.Header.Values("Content-Type"), "--"), EmptyString},
-		{"Header_DataAccessIntent", strings.Join(req.Header.Values("Data-Access-Intent"), "--"), DataAccessReadOnly},
-		{"Header_IfMatch", strings.Join(req.Header.Values("If-Match"), "--"), EmptyString},
+		{"Header_Accept", strings.Join(req.Header.Values("Accept"), "--"), bc.AcceptJSONNoMetadata},
+		{"Header_ContentType", strings.Join(req.Header.Values("Content-Type"), "--"), bctest.EmptyString},
+		{"Header_DataAccessIntent", strings.Join(req.Header.Values("Data-Access-Intent"), "--"), bc.DataAccessReadOnly},
+		{"Header_IfMatch", strings.Join(req.Header.Values("If-Match"), "--"), bctest.EmptyString},
 		// Check entity set name correctly applied
-		{"Path", strings.Split(req.URL.Path, "/")[pathIndexEntitySetName], "fakeEntities"},
+		{"Path", strings.Split(req.URL.Path, "/")[bctest.PathIndexEntitySetName], "fakeEntities"},
 	}
 
-	RunTable(table, t)
+	for _, test := range table {
+		if test.got != test.want {
+			t.Errorf("%s: wanted %v, got %v", test.name, test.want, test.got)
+		}
+	}
 
 }
 func TestMakeRequestGetCommonEndpoint(t *testing.T) {
@@ -63,12 +75,12 @@ func TestMakeRequestGetCommonEndpoint(t *testing.T) {
 	commonConfig := fakeConfig
 	commonConfig.APIEndpoint = "v2.0"
 
-	client, err := NewClient(commonConfig, fakeToken)
+	client, err := bc.NewClient(commonConfig, fakeTokenGetter{})
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}
 
-	opts := MakeRequestOptions{
+	opts := bc.RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: "fakeEntities",
 		QueryParams:   nil,
@@ -80,19 +92,19 @@ func TestMakeRequestGetCommonEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Table of all request pieces
-	table := []TestNameGotWant[string]{
-		// Check entity set name correctly applied
-		{"Path", strings.Split(req.URL.Path, "/")[pathIndexCommonEntitySetName], "fakeEntities"},
-	}
+	// Check entity set name correctly applied
+	got := strings.Split(req.URL.Path, "/")[bctest.PathIndexCommonEntitySetName]
+	want := "fakeEntities"
 
-	RunTable(table, t)
+	if got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
 
 }
 
 func TestMakeRequestPost(t *testing.T) {
 
-	client, err := NewClient(fakeConfig, fakeToken)
+	client, err := bc.NewClient(fakeConfig, fakeTokenGetter{})
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}
@@ -109,8 +121,8 @@ func TestMakeRequestPost(t *testing.T) {
 		Blocked: false,
 	}
 
-	opts := MakeRequestOptions{
-		Method:        http.MethodGet,
+	opts := bc.RequestOptions{
+		Method:        http.MethodPost,
 		EntitySetName: "fakeEntities",
 		Body:          reqBody,
 	}
@@ -134,21 +146,21 @@ func TestMakeRequestPost(t *testing.T) {
 
 func TestMakeRequestGetParams(t *testing.T) {
 
-	client, err := NewClient(fakeConfig, fakeToken)
+	client, err := bc.NewClient(fakeConfig, fakeTokenGetter{})
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}
 
-	qp := QueryParams{
+	qp := bc.QueryParams{
 		"param1": "value1",
 		"param2": "value2",
 	}
 
 	want := "param1=value1&param2=value2"
 
-	opts := MakeRequestOptions{
+	opts := bc.RequestOptions{
 		Method:        http.MethodGet,
-		EntitySetName: "fakeEntities",
+		EntitySetName: "fakeEntibc.EmptyStringties",
 		QueryParams:   qp,
 		Body:          nil,
 	}

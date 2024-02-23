@@ -11,7 +11,7 @@ import (
 
 func TestMain(m *testing.M) {
 
-	godotenv.Load("./.env")
+	godotenv.Load("../.env")
 
 	tenantID := bc.GUID(os.Getenv("TENANT_ID"))
 	clientID := bc.GUID(os.Getenv("CLIENT_ID"))

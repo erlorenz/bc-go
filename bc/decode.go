@@ -12,35 +12,34 @@ import (
 // ErrorResponse is the body of the response returned from
 // Business Central when the status is an error status.
 type ErrorResponse struct {
-	Error ODataError `json:"error"`
+	Error ErrorResponseError `json:"error"`
 }
 
-// ErrorResp is the contents of the error field. This is an
-// OData compliant error.
-type ODataError struct {
+// The inner error field of the error response from BC.
+type ErrorResponseError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
-// BCServerError is a combination of the OData error and the StatusCode
+// ServerError is a combination of the inner error and the StatusCode
 // returned by the BC server when responding with an error status.
 // It meets the Error interface.
-type BCServerError struct {
+type ServerError struct {
 	Code          string
 	Message       string
 	StatusCode    int
 	CorrelationID GUID
 }
 
-func (err BCServerError) Error() string {
-	return fmt.Sprintf("server responded with status %d: '%s', '%s'", err.StatusCode, err.Code, err.Message)
+func (err ServerError) Error() string {
+	return fmt.Sprintf("server responded with status %d: '%s' - '%s'", err.StatusCode, err.Code, err.Message)
 }
 
-func newBCServerError(err ODataError, statusCode int) BCServerError {
-	msg, id := extractCorrelationID(err.Message)
+func newBCServerError(statusCode int, code string, message string) ServerError {
+	msg, id := extractCorrelationID(message)
 
-	return BCServerError{
-		Code:          err.Code,
+	return ServerError{
+		Code:          code,
 		Message:       msg,
 		StatusCode:    statusCode,
 		CorrelationID: id,
@@ -49,16 +48,17 @@ func newBCServerError(err ODataError, statusCode int) BCServerError {
 
 // Decodes the http.Response into either an error or type T.
 // The error can be inspected with errors.As to check if it is a
-// BCServerError or an error during decoding.
+// ServerError or an error during decoding.
 func Decode[T Validator](r *http.Response) (T, error) {
+	defer r.Body.Close()
 
 	// Instantiate the generic data type early so it's zero
 	// value can be returned if there is an error
 	var data T
 
-	// If error status call makeFromErrorResponse() to return an error
+	// If error status call decodeErrorResponse() to return an error
 	if r.StatusCode < 200 || r.StatusCode >= 300 {
-		err := makeErrorFromResponse(r)
+		err := decodeErrorResponse(r)
 		return data, err
 	}
 
@@ -80,8 +80,7 @@ func Decode[T Validator](r *http.Response) (T, error) {
 
 // MakeErrorFromResponse decodes the http.Response into an ErrorResponse struct
 // and returns either an error with a failure to decode, or a BCServerError.
-func makeErrorFromResponse(r *http.Response) error {
-	defer r.Body.Close()
+func decodeErrorResponse(r *http.Response) error {
 	var data ErrorResponse
 
 	// Very strict response type, error on different structure.
@@ -98,7 +97,7 @@ func makeErrorFromResponse(r *http.Response) error {
 		return fmt.Errorf("failed decoding Response.Body into ErrorResponse: %s", string(b))
 	}
 
-	return newBCServerError(data.Error, r.StatusCode)
+	return newBCServerError(r.StatusCode, data.Error.Code, data.Error.Message)
 }
 
 // ExtractCorrelationID splits the message into a primary Message and then the CorrelationID.

@@ -12,7 +12,7 @@ import (
 func TestGetToken(t *testing.T) {
 	envs := getEnvs(t)
 
-	client, err := bc.NewAuthClient(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
+	client, err := bc.NewAuth(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestGetTokenTimeout(t *testing.T) {
 	clientID := bc.GUID(os.Getenv("CLIENT_ID"))
 	clientSecret := os.Getenv("CLIENT_SECRET")
 
-	client, err := bc.NewAuthClient(tenantID, clientID, clientSecret, nil)
+	client, err := bc.NewAuth(tenantID, clientID, clientSecret, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

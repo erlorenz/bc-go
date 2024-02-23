@@ -6,8 +6,6 @@ import (
 	"unicode/utf8"
 )
 
-const EmptyString = ""
-
 // GUID represents a Microsoft GUID and implements the Validator interface.
 type GUID string
 

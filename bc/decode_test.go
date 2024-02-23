@@ -1,32 +1,46 @@
-package bc
+package bc_test
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/erlorenz/bc-go/bc"
+	"github.com/erlorenz/bc-go/bctest"
 )
 
-var validErrorResponseJSON = []byte(fmt.Sprintf(`{
-	"error": {
-  		"code": "error_code",
-  		"message": "before_text  CorrelationId  %s"
-	}
-}`, validGUID))
+var validGUID = bctest.NewGUID()
 
-var invalidErrorResponseJSON = []byte(`{"other":"otherthing"}`)
+var validErrorResponse = bc.ErrorResponse{
+	Error: bc.ErrorResponseError{
+		Code:    "error_code",
+		Message: fmt.Sprintf("before_text  CorrelationId  %s", validGUID),
+	},
+}
+
+var invalidErrorResponse = struct {
+	OtherField string `json:"otherField"`
+}{
+	OtherField: "something else",
+}
 
 func TestMakeErrorFromResponse(t *testing.T) {
 
-	t.Logf("json: %s", validErrorResponseJSON)
-	fakeResponse := &http.Response{StatusCode: 400, Body: newReadCloser(validErrorResponseJSON)}
+	body := bctest.NewRequestBody(validErrorResponse)
+	fakeResponse := &http.Response{StatusCode: 400, Body: body}
 
-	err := makeErrorFromResponse(fakeResponse)
+	_, err := bc.Decode[bc.Validator](fakeResponse)
+	if err == nil {
+		t.Logf("response status: %d", fakeResponse.StatusCode)
+		b, _ := io.ReadAll(fakeResponse.Body)
+		t.Logf("response body: %s", string(b))
+		t.Fatal("expected error, got nil")
+	}
 
-	var srvErr BCServerError
-
+	var srvErr bc.ServerError
 	if errors.As(err, &srvErr) {
 		return
 	}
@@ -36,26 +50,31 @@ func TestMakeErrorFromResponse(t *testing.T) {
 
 func TestMakeErrorFromResponseInvalid(t *testing.T) {
 
-	fakeResponse := &http.Response{StatusCode: 500, Body: newReadCloser(invalidErrorResponseJSON)}
+	body := bctest.NewRequestBody(invalidErrorResponse)
+	fakeResponse := &http.Response{StatusCode: 400, Body: body}
 
-	err := makeErrorFromResponse(fakeResponse)
-
-	var srvErr BCServerError
-
-	if errors.As(err, &srvErr) {
-		t.Errorf("returned Server error: %+v", err)
+	_, err := bc.Decode[bc.Validator](fakeResponse)
+	if err == nil {
+		t.Logf("response status: %d", fakeResponse.StatusCode)
+		b, _ := io.ReadAll(fakeResponse.Body)
+		t.Logf("response body: %s", string(b))
+		t.Fatal("expected error, got nil")
 	}
 
-	// t.Errorf("failed making error from response: %s", err)
+	var srvErr bc.ServerError
+	if errors.As(err, &srvErr) {
+		return
+	}
+	t.Errorf("failed making error from response: %s", err)
 
 }
 
 type fakeEntity struct {
-	ID              GUID
+	ID              bc.GUID
 	Quantity        int
 	CreatedDateTime time.Time
-	OrderDate       Date
-	PostingDate     Date
+	OrderDate       bc.Date
+	PostingDate     bc.Date
 	Number          string
 }
 
@@ -76,16 +95,9 @@ func TestResponseData(t *testing.T) {
 		"Number":          "NUMBER324234",
 	}
 
-	b, err := json.Marshal(fakeRecord)
-	if err != nil {
-		t.Fatalf("couldnt marshal: %s", err)
-	}
+	fakeResponse := &http.Response{StatusCode: 200, Body: bctest.NewRequestBody(fakeRecord)}
 
-	t.Logf("%s", b)
-
-	fakeResponse := &http.Response{StatusCode: 200, Body: newReadCloser(b)}
-
-	record, err := Decode[fakeEntity](fakeResponse)
+	record, err := bc.Decode[fakeEntity](fakeResponse)
 
 	t.Logf("%v", record)
 
@@ -124,14 +136,11 @@ func TestResponseDataInvalid(t *testing.T) {
 		"Number":          "NUMBER324234",
 	}
 
-	b, err := json.Marshal(fakeRecord)
-	if err != nil {
-		t.Fatalf("couldnt marshal: %s", err)
-	}
+	body := bctest.NewRequestBody(fakeRecord)
 
-	fakeResponse := &http.Response{StatusCode: 200, Body: newReadCloser(b)}
+	fakeResponse := &http.Response{StatusCode: 200, Body: body}
 
-	record, err := Decode[fakeEntity](fakeResponse)
+	record, err := bc.Decode[fakeEntity](fakeResponse)
 
 	if err != nil {
 		t.Fatalf("failed to decode valid body: %s", err)
