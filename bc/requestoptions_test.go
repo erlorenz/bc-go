@@ -25,7 +25,8 @@ func TestRequestOptions(t *testing.T) {
 			name: "valid get with params",
 			want: true,
 			opts: bc.RequestOptions{
-				Method: http.MethodGet,
+				Method:        http.MethodGet,
+				EntitySetName: "fakeEntities",
 				QueryParams: bc.QueryParams{
 					"$filter": "number eq 'XXXX'",
 				},
@@ -42,8 +43,9 @@ func TestRequestOptions(t *testing.T) {
 			name: "valid post with body",
 			want: true,
 			opts: bc.RequestOptions{
-				Method: http.MethodPost,
-				Body:   "a non-nil body"},
+				Method:        http.MethodPost,
+				EntitySetName: "fakeEntities",
+				Body:          "a non-nil body"},
 		},
 	}
 

@@ -29,8 +29,16 @@ type RequestOptions struct {
 }
 
 func (r RequestOptions) Validate() error {
+	var errs error
 
-	errs := errors.Join(stringNotEmpty(r.EntitySetName), stringNotEmpty(r.Method))
+	// Validate method and entity set to be required.
+	if err := stringNotEmpty(r.Method); err != nil {
+		errs = errors.Join(fmt.Errorf("invalid method: %s", err))
+	}
+
+	if err := stringNotEmpty(r.EntitySetName); err != nil {
+		errs = errors.Join(fmt.Errorf("invalid entitySetName: %s", err))
+	}
 
 	// If record ID validate it
 	if r.RecordID != "" {

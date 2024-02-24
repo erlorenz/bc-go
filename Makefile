@@ -2,6 +2,9 @@ test:
 	go test github.com/erlorenz/bc-go/bc
 
 test/all:
+	go test -race  ./...
+
+test/all/v:
 	go test -v -race  ./...
 
 test/int:

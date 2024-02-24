@@ -63,9 +63,9 @@ func TestMakeErrorFromResponseInvalid(t *testing.T) {
 
 	var srvErr bc.ServerError
 	if errors.As(err, &srvErr) {
-		return
+		t.Logf("error: %s", srvErr)
+		t.Errorf("was read as a ServerError, it should not be.")
 	}
-	t.Errorf("failed making error from response: %s", err)
 
 }
 
