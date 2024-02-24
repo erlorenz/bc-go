@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-// d
+// dksdlfjdsja
 // BuildBaseURL builds the BaseURL from the ClientConfig.
 // It uses the structure
 // "https://api.businesscentral.dynamics.com/v2.0/{tenantID}/{environment}/api/{APIendpoint}/companies({companyID})"
