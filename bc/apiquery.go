@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -54,6 +55,19 @@ func (q *APIQuery[T]) List(ctx context.Context, filter string, orderby string, t
 	qp := QueryParams{}
 	if filter != "" {
 		qp["$filter"] = filter
+	}
+
+	// Set $orderby if exists
+	if orderby != "" {
+		if orderby != "ASC" && orderby != "DESC" {
+			return nil, fmt.Errorf("bad orderby format '%s', must be either 'DESC' or 'ASC'", orderby)
+		}
+		qp["$orderby"] = orderby
+	}
+
+	// Set $top if exists
+	if top > 0 {
+		qp["$top"] = strconv.Itoa(top)
 	}
 
 	opts := RequestOptions{
