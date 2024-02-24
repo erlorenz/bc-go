@@ -1,4 +1,4 @@
-package v2_test
+package testv2
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 )
 
 func TestGetToken(t *testing.T) {
-	envs := getEnvs(t)
 
 	client, err := bc.NewAuth(envs.TenantID, envs.ClientID, envs.ClientSecret, nil)
 	if err != nil {

@@ -21,6 +21,16 @@ type APIPage[T Validator] struct {
 	baseExpand    []string
 }
 
+// APIListResponse is the response body of a valid GET request that does not
+// have a RecordID. The Value field has a slice of T.
+type APIListResponse[T Validator] struct {
+	Value []T `json:"value" validate:"required,dive"`
+}
+
+func (a APIListResponse[T]) Validate() error {
+	return ValidateStruct(a)
+}
+
 // NewAPIPage creates an instance of an APIPage. It validates
 // that the *Client is not nil and entitySetName is not empty. Call SetBaseExpand or SetBaseFilter
 // on the APIPage to set the baseExpand/baseFilter.
@@ -40,7 +50,18 @@ func NewAPIPage[T Validator](client *Client, entitySetName string) (*APIPage[T],
 
 // Sets the baseExpand slice. This will be added to all request expand expressions.
 func (a *APIPage[T]) SetBaseExpand(expands []string) {
-	a.baseExpand = slices.Concat(expands)
+	a.baseExpand = expands
+}
+
+// Adds a new string to the baseExpand slice. This will be added
+// to all request expand expressions.
+func (a *APIPage[T]) AddBaseExpand(expand string) {
+	a.baseExpand = append(a.baseExpand, expand)
+}
+
+// Returns the BaseExpand.
+func (a *APIPage[T]) BaseExpand() []string {
+	return a.baseExpand
 }
 
 // Sets the base filter string. This will be added to all request filters.
@@ -49,15 +70,19 @@ func (a *APIPage[T]) SetBaseFilter(filter string) {
 }
 
 // Get makes a GET request to the endpoint and retrieves a single record T.
-// Requires the ID and  takes an optional map of query options.
+// Requires the ID and  takes an optional slice of expand strings.
 func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, error) {
 	var v T
 
 	qp := QueryParams{}
 
+	// Add new expands to base
+	expands := a.baseExpand
 	if len(expand) > 0 {
-		qp["$expand"] = strings.Join(expand, ",")
+		expands = slices.Concat(a.baseExpand, expand)
 	}
+
+	qp["$expand"] = strings.Join(expands, ",")
 
 	opts := RequestOptions{
 		Method:        http.MethodGet,
@@ -87,7 +112,7 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 }
 
 // List makes a GET request to the endpoint and returns []T.
-// It takes optional map of query options.
+// It takes optional struct of query options.
 func (a *APIPage[T]) List(ctx context.Context, queryOpts ListQueryOptions) ([]T, error) {
 	var v []T
 
@@ -115,26 +140,50 @@ func (a *APIPage[T]) List(ctx context.Context, queryOpts ListQueryOptions) ([]T,
 	if err != nil {
 		return v, fmt.Errorf("failed to decode response: %w", err)
 	}
-	v = *list.Value
+	v = list.Value
 	return v, nil
 }
 
-type APIListResponse[T Validator] struct {
-	Value *[]T `json:"value"`
-}
+// Update makes a Patch request to the endpoint and returns T.
+// It requires a body and a RecordID.
+func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body any) (T, error) {
+	var v T
 
-func (a APIListResponse[T]) Validate() error {
-	// Make sure Value is initialized
-	fmt.Printf("a.Value == %v\n", a.Value)
-	if a.Value == nil {
-		return errors.New("validation error: Value is empty")
+	qp := QueryParams{}
+
+	// Add new expands to base
+	expands := a.baseExpand
+	if len(expand) > 0 {
+		expands = slices.Concat(a.baseExpand, expand)
 	}
-	// Validate first object
-	if len(*a.Value) > 0 {
-		err := (*a.Value)[0].Validate()
-		if err != nil {
-			return err
+
+	qp["$expand"] = strings.Join(expands, ",")
+
+	opts := RequestOptions{
+		Method:        http.MethodPatch,
+		EntitySetName: a.entitySetName,
+		RecordID:      id,
+		QueryParams:   qp,
+		Body:          body,
+	}
+	req, err := a.client.NewRequest(ctx, opts)
+	if err != nil {
+		return v, fmt.Errorf("failed to create Request: %w", err)
+	}
+
+	res, err := a.client.Do(req)
+	if err != nil {
+		return v, fmt.Errorf("failed during request: %w", err)
+	}
+
+	v, err = Decode[T](res)
+	var srvErr ServerError
+	if err != nil {
+		if errors.As(err, &srvErr) {
+			return v, fmt.Errorf("error from server: %w", err)
 		}
+		return v, fmt.Errorf("failed to decode response: %w", err)
 	}
-	return nil
+	return v, nil
+
 }

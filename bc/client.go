@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// Client is used to send ana receive HTTP requests/responses to the
+// Client is used to send and receive HTTP requests/responses to the
 // API server. There should be one client created per publisher/group/version
 // combination as these can each have their own schemas. Clients can
 // share the authClient if they are using the same scope.

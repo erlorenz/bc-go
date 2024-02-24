@@ -51,10 +51,10 @@ func (r RequestOptions) Validate() error {
 			errs = errors.Join(errs, errors.New("invalid combination: cannot have body with GET or DELETE method"))
 		}
 	}
-	// Cannot have query params with anything but GET
-	if r.QueryParams != nil {
+	// Cannot have filter query params with anything but GET
+	if r.QueryParams != nil && r.QueryParams["$filter"] != "" {
 		if r.Method != http.MethodGet {
-			errs = errors.Join(errs, fmt.Errorf("invalid combination: cannot have query params with method %s", r.Method))
+			errs = errors.Join(errs, fmt.Errorf("invalid combination: cannot have $filter query param with method %s", r.Method))
 		}
 	}
 	if r.Method == http.MethodPatch && r.RecordID == "" {

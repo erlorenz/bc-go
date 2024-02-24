@@ -32,7 +32,7 @@ type ServerError struct {
 }
 
 func (err ServerError) Error() string {
-	return fmt.Sprintf("server responded with status %d: '%s' - '%s'", err.StatusCode, err.Code, err.Message)
+	return fmt.Sprintf("[%d %s] %q", err.StatusCode, err.Code, err.Message)
 }
 
 func newBCServerError(statusCode int, code string, message string) ServerError {
