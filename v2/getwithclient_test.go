@@ -1,15 +1,26 @@
-package integration
+package v2_test
 
 import (
 	"context"
-	"io"
+	"errors"
 	"net/http"
 	"testing"
 
 	"github.com/erlorenz/bc-go/bc"
 )
 
-func TestListSalesOrdersV2(t *testing.T) {
+type extractID struct {
+	ID string `json:"id"`
+}
+
+func (e extractID) Validate() error {
+	if e.ID == "" {
+		return errors.New("validation error: ID is empty")
+	}
+	return nil
+}
+
+func TestGetSalesOrderV2(t *testing.T) {
 	envs := getEnvs(t)
 
 	ctx := context.Background()
@@ -17,13 +28,6 @@ func TestListSalesOrdersV2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// test get token
-	token, err := authClient.GetToken(ctx)
-	if err != nil {
-		t.Fatalf("failed to get token %s", err)
-	}
-	t.Logf("token: %s", token)
 
 	client, err := bc.NewClient(bc.ClientConfig{
 		TenantID:    envs.TenantID,
@@ -38,6 +42,7 @@ func TestListSalesOrdersV2(t *testing.T) {
 	opts := bc.RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: "salesOrders",
+		RecordID:      "afb373be-c787-ee11-817a-6045bd7b892b",
 	}
 
 	req, err := client.NewRequest(ctx, opts)
@@ -52,15 +57,9 @@ func TestListSalesOrdersV2(t *testing.T) {
 		t.Fatalf("failed making request: %s", err)
 	}
 
-	collection, err := bc.Decode[bc.APIListResponse[extractID]](res)
+	collection, err := bc.Decode[extractID](res)
 	if err != nil {
-		// Just do a ReadAll dump
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			t.Fatalf("failed reading body: %s", err)
-		}
-		t.Logf("%s", string(body))
-
+		t.Fatalf("%s", err)
 	}
 
 	t.Logf("collection: %+v", collection)

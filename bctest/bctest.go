@@ -27,6 +27,7 @@ func NewRequestBody(v any) io.ReadCloser {
 // NewGUID generates a random UUID and casts it to a GUID.
 func NewGUID() bc.GUID {
 	uuid := uuid.New().String()
+
 	return bc.GUID(uuid)
 }
 

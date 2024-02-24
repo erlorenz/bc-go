@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+// clientOptions represents optional configuration values
+// which are applied to the Client.
+// This is used as a go-between so that optional functions don't operate on the Client directly.
 type clientOptions struct {
 	httpClient *http.Client
 	logger     *slog.Logger
@@ -16,11 +19,7 @@ type clientOptions struct {
 // ClientOption modifies the ClientOptions struct.
 type ClientOptionFunc func(*clientOptions)
 
-// clientOptions represents optional configuration values
-// which are applied to the Client.
-
-// newClientOptions uses the options provided and sets defaults
-// for the rest.
+// setClientOptions applies the option functions to the client.
 func setClientOptions(c *Client, optFuncs []ClientOptionFunc) {
 	options := clientOptions{}
 	// Call each optFunc
@@ -41,7 +40,7 @@ func WithLogger(logger *slog.Logger) ClientOptionFunc {
 	}
 }
 
-// WithHTTPClient sets a client that meets the HTTPClient interface.
+// WithHTTPClient sets an http.Client instead of using the default baseClient.
 func WithHTTPClient(httpClient *http.Client) ClientOptionFunc {
 	return func(clientOptions *clientOptions) {
 		clientOptions.httpClient = httpClient

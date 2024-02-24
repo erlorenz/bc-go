@@ -76,9 +76,9 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 	}
 
 	v, err = Decode[T](res)
-	var bcErr ServerError
+	var srvErr ServerError
 	if err != nil {
-		if errors.As(err, &bcErr) {
+		if errors.As(err, &srvErr) {
 			return v, fmt.Errorf("error from server: %w", err)
 		}
 		return v, fmt.Errorf("failed to decode response: %w", err)

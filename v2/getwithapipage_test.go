@@ -1,4 +1,4 @@
-package integration
+package v2_test
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/erlorenz/bc-go/bc"
-	"github.com/erlorenz/bc-go/slicefuncs"
 )
 
 type salesOrder struct {
@@ -92,9 +91,9 @@ func TestAPIPageListV2(t *testing.T) {
 	}
 
 	// Log only the IDs
-	less := slicefuncs.Map(salesOrders, func(order salesOrder) extractID {
+	onlyIDs := mapslice(salesOrders, func(order salesOrder) extractID {
 		return extractID{ID: order.ID}
 	})
-	b, _ := json.MarshalIndent(less[:5], "", "  ")
+	b, _ := json.MarshalIndent(onlyIDs[:5], "", "  ")
 	t.Logf("Items: %s", b)
 }
