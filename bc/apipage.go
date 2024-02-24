@@ -157,7 +157,9 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 		expands = slices.Concat(a.baseExpand, expand)
 	}
 
-	qp["$expand"] = strings.Join(expands, ",")
+	if len(expands) > 0 {
+		qp["$expand"] = strings.Join(expands, ",")
+	}
 
 	opts := RequestOptions{
 		Method:        http.MethodPatch,
