@@ -203,7 +203,9 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 		expands = slices.Concat(a.baseExpand, expand)
 	}
 
-	qp["$expand"] = strings.Join(expands, ",")
+	if len(expands) > 0 {
+		qp["$expand"] = strings.Join(expands, ",")
+	}
 
 	opts := RequestOptions{
 		Method:        http.MethodPost,
