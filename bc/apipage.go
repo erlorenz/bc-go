@@ -23,7 +23,7 @@ type APIPage[T Validator] struct {
 
 // APIListResponse is the response body of a valid GET request that does not
 // have a RecordID. The Value field has a slice of T.
-type APIListResponse[T Validator] struct {
+type APIListResponse[T any] struct {
 	Value []T `json:"value" validate:"required,dive"`
 }
 
@@ -113,7 +113,7 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 
 // List makes a GET request to the endpoint and returns []T.
 // It takes optional struct of query options.
-func (a *APIPage[T]) List(ctx context.Context, queryOpts ListQueryOptions) ([]T, error) {
+func (a *APIPage[T]) List(ctx context.Context, queryOpts ListPageOptions) ([]T, error) {
 	var v []T
 
 	qp, err := queryOpts.BuildQueryParams(a.baseFilter, a.baseExpand)

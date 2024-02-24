@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// ListQueryOptions are the different OData filters and expressions that are
-// sent as query params in the request.
-type ListQueryOptions struct {
+// ListPageOptions are the different OData filters and expressions that are
+// sent as query params in the request to an APIPage.
+type ListPageOptions struct {
 	Filter  string
 	Expand  []string
 	Orderby string
@@ -18,7 +18,7 @@ type ListQueryOptions struct {
 
 // BuildQueryParams combines the base filter/expand with the provided ListQueryOptions to return QueryParams
 // for the request.
-func (q ListQueryOptions) BuildQueryParams(baseFilter string, baseExpand []string) (QueryParams, error) {
+func (q ListPageOptions) BuildQueryParams(baseFilter string, baseExpand []string) (QueryParams, error) {
 
 	// Filter should be in format "<baseFilter> and (<extrafilter>)"
 	// Only supports adding to the base filter --don't use base filter if you need an "or"

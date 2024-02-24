@@ -9,7 +9,7 @@ func TestBuildQueryParams(t *testing.T) {
 	filter := "number eq 'XXXX'"
 	expands := []string{"salesLines", "customer"}
 
-	opts := ListQueryOptions{
+	opts := ListPageOptions{
 		Filter:  filter,
 		Expand:  expands,
 		Top:     5,
@@ -44,7 +44,7 @@ func TestBuildQueryParamsWithBase(t *testing.T) {
 	filter := "number eq 'XXXX'"
 	expands := []string{"salesLines", "customer"}
 
-	opts := ListQueryOptions{
+	opts := ListPageOptions{
 		Filter:  filter,
 		Expand:  expands,
 		Top:     5,
