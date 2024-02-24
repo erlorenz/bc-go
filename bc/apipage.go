@@ -187,3 +187,46 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 	return v, nil
 
 }
+
+// New makes a Patch request to the endpoint and returns T.
+// It requires a body.
+func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, error) {
+	var v T
+
+	qp := QueryParams{}
+
+	// Add new expands to base
+	expands := a.baseExpand
+	if len(expand) > 0 {
+		expands = slices.Concat(a.baseExpand, expand)
+	}
+
+	qp["$expand"] = strings.Join(expands, ",")
+
+	opts := RequestOptions{
+		Method:        http.MethodPost,
+		EntitySetName: a.entitySetName,
+		QueryParams:   qp,
+		Body:          body,
+	}
+	req, err := a.client.NewRequest(ctx, opts)
+	if err != nil {
+		return v, fmt.Errorf("failed to create Request: %w", err)
+	}
+
+	res, err := a.client.Do(req)
+	if err != nil {
+		return v, fmt.Errorf("failed during request: %w", err)
+	}
+
+	v, err = Decode[T](res)
+	var srvErr ServerError
+	if err != nil {
+		if errors.As(err, &srvErr) {
+			return v, fmt.Errorf("error from server: %w", err)
+		}
+		return v, fmt.Errorf("failed to decode response: %w", err)
+	}
+	return v, nil
+
+}
