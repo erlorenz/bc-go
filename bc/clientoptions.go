@@ -28,7 +28,7 @@ func setClientOptions(c *Client, optFuncs []ClientOptionFunc) {
 	}
 
 	// Set defaults
-	c.baseClient = cmp.Or(options.httpClient, &http.Client{Timeout: time.Second * 15})
+	c.baseClient = cmp.Or(options.httpClient, &http.Client{Timeout: time.Second * 20})
 	c.logger = cmp.Or(options.logger, slog.New(slog.NewJSONHandler(os.Stderr, nil)))
 
 }

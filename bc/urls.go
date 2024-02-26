@@ -42,9 +42,12 @@ func BuildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryPara
 		newURL.Path += fmt.Sprintf("(%s)", recordID)
 	}
 
-	// Build query params
+	// Build query params, skip if empty
 	query := url.Values{}
 	for k, v := range queryParams {
+		if v == "" {
+			continue
+		}
 		query.Set(k, v)
 	}
 	newURL.RawQuery = query.Encode()
@@ -58,8 +61,8 @@ func BuildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryPara
 // const pathIndexGroup = 6
 // const pathIndexVersion = 7
 // const pathIndexCompaniesSegment = 8
-const pathIndexEntitySetName = 9
+// const pathIndexEntitySetName = 9
 
 // const pathIndexCommonVersion = 3
 // const pathIndexCommonCompaniesSegment = 6
-const pathIndexCommonEntitySetName = 7
+// const pathIndexCommonEntitySetName = 7

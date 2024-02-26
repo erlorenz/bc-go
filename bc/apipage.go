@@ -161,6 +161,8 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 		qp["$expand"] = strings.Join(expands, ",")
 	}
 
+	a.client.logger.Debug("Query params initialized.", "expand", qp["$expand"])
+
 	opts := RequestOptions{
 		Method:        http.MethodPatch,
 		EntitySetName: a.entitySetName,
@@ -172,6 +174,8 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 	if err != nil {
 		return v, fmt.Errorf("failed to create Request: %w", err)
 	}
+
+	a.client.logger.Info("Sending request...", "url", req.URL.String(), "method", req.Method)
 
 	res, err := a.client.Do(req)
 	if err != nil {
@@ -206,6 +210,7 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 	if len(expands) > 0 {
 		qp["$expand"] = strings.Join(expands, ",")
 	}
+	a.client.logger.Debug("Query params initialized.", "expand", qp["$expand"])
 
 	opts := RequestOptions{
 		Method:        http.MethodPost,
@@ -217,6 +222,8 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 	if err != nil {
 		return v, fmt.Errorf("failed to create Request: %w", err)
 	}
+
+	a.client.logger.Debug("Request initialized.", "url", req.URL.String(), "method", req.Method)
 
 	res, err := a.client.Do(req)
 	if err != nil {
