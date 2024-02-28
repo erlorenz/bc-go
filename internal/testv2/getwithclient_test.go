@@ -51,7 +51,7 @@ func TestGetSalesOrderV2(t *testing.T) {
 	order, err := bc.Decode[salesOrder](res)
 	if err != nil {
 
-		var srvErr bc.ServerError
+		var srvErr bc.APIError
 		if errors.As(err, &srvErr) {
 			t.Fatalf("server error: %+v", srvErr)
 		}

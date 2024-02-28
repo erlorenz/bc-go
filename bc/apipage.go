@@ -101,7 +101,7 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 	}
 
 	v, err = Decode[T](res)
-	var srvErr ServerError
+	var srvErr APIError
 	if err != nil {
 		if errors.As(err, &srvErr) {
 			return v, fmt.Errorf("error from server: %w", err)
@@ -183,15 +183,19 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 	}
 
 	v, err = Decode[T](res)
-	var srvErr ServerError
 	if err != nil {
+		var srvErr APIError
 		if errors.As(err, &srvErr) {
-			return v, fmt.Errorf("error from server: %w", err)
+			a.client.logger.Debug("API server returned error response.", "error", srvErr)
+			return v, fmt.Errorf("error from server: %w", srvErr)
 		}
+
+		a.client.logger.Debug("Failed to decode response.", "error", err)
 		return v, fmt.Errorf("failed to decode response: %w", err)
 	}
-	return v, nil
 
+	a.client.logger.Debug(fmt.Sprintf("Successfully created %T record.", v), "record", fmt.Sprintf("%#v", v))
+	return v, nil
 }
 
 // New makes a Patch request to the endpoint and returns T.
@@ -231,13 +235,55 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 	}
 
 	v, err = Decode[T](res)
-	var srvErr ServerError
 	if err != nil {
+		var srvErr APIError
 		if errors.As(err, &srvErr) {
-			return v, fmt.Errorf("error from server: %w", err)
+			a.client.logger.Debug("API server returned error response.", "error", srvErr)
+			return v, fmt.Errorf("error from server: %w", srvErr)
 		}
+
+		a.client.logger.Debug("Failed to decode response.", "error", err)
 		return v, fmt.Errorf("failed to decode response: %w", err)
 	}
+	a.client.logger.Debug(fmt.Sprintf("Successfully created %T record.", v), "record", fmt.Sprintf("%#v", v))
 	return v, nil
 
+}
+
+// Delete makes a DELETE request to the endpoint and returns a string message.
+// It requires a RecordID.
+func (a *APIPage[T]) Delete(ctx context.Context, id GUID) error {
+	opts := RequestOptions{
+		Method:        http.MethodDelete,
+		EntitySetName: a.entitySetName,
+		RecordID:      id,
+	}
+	req, err := a.client.NewRequest(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("failed to create Request: %w", err)
+	}
+
+	a.client.logger.Debug("Sending request...", "url", req.URL.String(), "method", req.Method)
+
+	res, err := a.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed during request: %w", err)
+	}
+
+	// Expects a 204 No Content
+	err = DecodeNoContent(res)
+
+	if err != nil {
+		var srvErr APIError
+		if errors.As(err, &srvErr) {
+			a.client.logger.Debug("API server returned error response.", "error", srvErr)
+			return fmt.Errorf("error from server: %w", srvErr)
+		}
+
+		a.client.logger.Debug("Failed to decode response.", "error", err)
+		return fmt.Errorf("failed to decode response: %w", err)
+	}
+	a.client.logger.Debug("Succesfully deleted record.", "id", id)
+
+	return nil
 }

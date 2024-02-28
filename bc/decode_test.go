@@ -40,7 +40,7 @@ func TestMakeErrorFromResponse(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	var srvErr bc.ServerError
+	var srvErr bc.APIError
 	if errors.As(err, &srvErr) {
 		return
 	}
@@ -61,7 +61,7 @@ func TestMakeErrorFromResponseInvalid(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	var srvErr bc.ServerError
+	var srvErr bc.APIError
 	if errors.As(err, &srvErr) {
 		t.Logf("error: %s", srvErr)
 		t.Errorf("was read as a ServerError, it should not be.")

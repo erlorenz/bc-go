@@ -40,7 +40,7 @@ func TestListSalesOrders(t *testing.T) {
 	listResponse, err := bc.Decode[bc.APIListResponse[salesOrder]](res)
 	if err != nil {
 
-		var srvErr bc.ServerError
+		var srvErr bc.APIError
 		if errors.As(err, &srvErr) {
 			t.Fatalf("server error: %+v", srvErr)
 		}

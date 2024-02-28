@@ -21,34 +21,36 @@ type ErrorResponseError struct {
 	Message string `json:"message"`
 }
 
-// ServerError is a combination of the inner error and the StatusCode
+// APIError is a combination of the inner error and the StatusCode
 // returned by the BC server when responding with an error status.
 // It meets the Error interface.
-type ServerError struct {
+type APIError struct {
 	Code          string
 	Message       string
 	StatusCode    int
 	CorrelationID GUID
+	Request       *http.Request
 }
 
-func (err ServerError) Error() string {
+func (err APIError) Error() string {
 	return fmt.Sprintf("[%d %s] %q", err.StatusCode, err.Code, err.Message)
 }
 
-func newBCServerError(statusCode int, code string, message string) ServerError {
+func newBCServerError(statusCode int, code string, message string, request *http.Request) APIError {
 	msg, id := extractCorrelationID(message)
 
-	return ServerError{
+	return APIError{
 		Code:          code,
 		Message:       msg,
 		StatusCode:    statusCode,
 		CorrelationID: id,
+		Request:       request,
 	}
 }
 
 // Decodes the http.Response into either an error or type T.
 // The error can be inspected with errors.As to check if it is a
-// ServerError or an error during decoding.
+// APIError or an error during decoding.
 func Decode[T Validator](r *http.Response) (T, error) {
 	defer r.Body.Close()
 
@@ -78,6 +80,22 @@ func Decode[T Validator](r *http.Response) (T, error) {
 
 }
 
+// Decodes the http.Response into an error.
+// The error can be inspected with errors.As to check if it is a
+// APIError or an error during decoding.
+func DecodeNoContent(r *http.Response) error {
+	defer r.Body.Close()
+
+	// If error status call decodeErrorResponse() to return an error
+	if r.StatusCode < 200 || r.StatusCode >= 300 {
+		err := decodeErrorResponse(r)
+		return err
+	}
+
+	return nil
+
+}
+
 // MakeErrorFromResponse decodes the http.Response into an ErrorResponse struct
 // and returns either an error with a failure to decode, or a BCServerError.
 func decodeErrorResponse(r *http.Response) error {
@@ -97,7 +115,7 @@ func decodeErrorResponse(r *http.Response) error {
 		return fmt.Errorf("failed decoding Response.Body into ErrorResponse: %s", string(b))
 	}
 
-	return newBCServerError(r.StatusCode, data.Error.Code, data.Error.Message)
+	return newBCServerError(r.StatusCode, data.Error.Code, data.Error.Message, r.Request)
 }
 
 // ExtractCorrelationID splits the message into a primary Message and then the CorrelationID.
