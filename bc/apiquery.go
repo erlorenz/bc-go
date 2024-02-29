@@ -87,6 +87,13 @@ func (q *APIQuery[T]) List(ctx context.Context, filter string, orderby string, t
 
 	list, err := Decode[APIListResponse[T]](res)
 	if err != nil {
+		var srvErr APIError
+		if errors.As(err, &srvErr) {
+			q.client.logger.Debug("API server returned error response.", "error", srvErr)
+			return v, fmt.Errorf("error from BC API: %w", srvErr)
+		}
+
+		q.client.logger.Debug("Failed to decode response.", "error", err)
 		return v, fmt.Errorf("failed to decode response: %w", err)
 	}
 	v = list.Value
