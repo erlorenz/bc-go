@@ -36,7 +36,7 @@ func (err APIError) Error() string {
 	return fmt.Sprintf("[%d %s] %q", err.StatusCode, err.Code, err.Message)
 }
 
-func newBCServerError(statusCode int, code string, message string, request *http.Request) APIError {
+func newBCAPIError(statusCode int, code string, message string, request *http.Request) APIError {
 	msg, id := extractCorrelationID(message)
 
 	return APIError{
@@ -115,7 +115,8 @@ func decodeErrorResponse(r *http.Response) error {
 		return fmt.Errorf("failed decoding Response.Body into ErrorResponse: %s", string(b))
 	}
 
-	return newBCServerError(r.StatusCode, data.Error.Code, data.Error.Message, r.Request)
+	return newBCAPIError(r.StatusCode, data.Error.Code, data.Error.Message, r.Request)
+
 }
 
 // ExtractCorrelationID splits the message into a primary Message and then the CorrelationID.

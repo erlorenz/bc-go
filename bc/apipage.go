@@ -101,11 +101,14 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 	}
 
 	v, err = Decode[T](res)
-	var srvErr APIError
 	if err != nil {
+		var srvErr APIError
 		if errors.As(err, &srvErr) {
-			return v, fmt.Errorf("error from server: %w", err)
+			a.client.logger.Debug("API server returned error response.", "error", srvErr)
+			return v, fmt.Errorf("error from BC API: %w", srvErr)
 		}
+
+		a.client.logger.Debug("Failed to decode response.", "error", err)
 		return v, fmt.Errorf("failed to decode response: %w", err)
 	}
 	return v, nil
@@ -138,6 +141,13 @@ func (a *APIPage[T]) List(ctx context.Context, queryOpts ListPageOptions) ([]T, 
 
 	list, err := Decode[APIListResponse[T]](res)
 	if err != nil {
+		var srvErr APIError
+		if errors.As(err, &srvErr) {
+			a.client.logger.Debug("API server returned error response.", "error", srvErr)
+			return v, fmt.Errorf("error from BC API: %w", srvErr)
+		}
+
+		a.client.logger.Debug("Failed to decode response.", "error", err)
 		return v, fmt.Errorf("failed to decode response: %w", err)
 	}
 	v = list.Value
@@ -187,7 +197,7 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 		var srvErr APIError
 		if errors.As(err, &srvErr) {
 			a.client.logger.Debug("API server returned error response.", "error", srvErr)
-			return v, fmt.Errorf("error from server: %w", srvErr)
+			return v, fmt.Errorf("error from BC API: %w", srvErr)
 		}
 
 		a.client.logger.Debug("Failed to decode response.", "error", err)
@@ -239,7 +249,7 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 		var srvErr APIError
 		if errors.As(err, &srvErr) {
 			a.client.logger.Debug("API server returned error response.", "error", srvErr)
-			return v, fmt.Errorf("error from server: %w", srvErr)
+			return v, fmt.Errorf("error from BC API: %w", srvErr)
 		}
 
 		a.client.logger.Debug("Failed to decode response.", "error", err)
@@ -277,7 +287,7 @@ func (a *APIPage[T]) Delete(ctx context.Context, id GUID) error {
 		var srvErr APIError
 		if errors.As(err, &srvErr) {
 			a.client.logger.Debug("API server returned error response.", "error", srvErr)
-			return fmt.Errorf("error from server: %w", srvErr)
+			return fmt.Errorf("error from BC API: %w", srvErr)
 		}
 
 		a.client.logger.Debug("Failed to decode response.", "error", err)
