@@ -33,7 +33,7 @@ type APIError struct {
 }
 
 func (err APIError) Error() string {
-	return fmt.Sprintf("[%d %s] %q", err.StatusCode, err.Code, err.Message)
+	return fmt.Sprintf("[%d %s] %s", err.StatusCode, err.Code, err.Message)
 }
 
 func newBCAPIError(statusCode int, code string, message string, request *http.Request) APIError {
