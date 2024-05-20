@@ -49,6 +49,22 @@ func TestParseBadDate(t *testing.T) {
 	}
 }
 
+func TestTimeUTC(t *testing.T) {
+	date, err := ParseDate("2024-02-01")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	time := date.TimeUTC()
+
+	if time.Month() != 2 {
+		t.Errorf("wrong month, expected 2, got %d", time.Month())
+	}
+	if time.Day() != 1 {
+		t.Errorf("wrong date, expected 1, got %d", time.Day())
+	}
+}
+
 func TestMarshalFromParseDate(t *testing.T) {
 
 	d, err := ParseDate("2024-02-18")

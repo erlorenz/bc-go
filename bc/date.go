@@ -41,6 +41,11 @@ func (d Date) String() string {
 	return fmt.Sprintf("%04d-%02d-%02d", d.Year, d.Month, d.Day)
 }
 
+// Time returns a time.Time representing the Date at UTC time 00:00.
+func (d Date) TimeUTC() time.Time {
+	return time.Date(d.Year, d.Month, d.Day, 0, 0, 0, 0, time.UTC)
+}
+
 // UnmarshalJSON takes the date string (formatted 'YYYY-MM-DD') and converts it to a Date.
 func (d *Date) UnmarshalJSON(data []byte) error {
 	// Unmarshal as string
