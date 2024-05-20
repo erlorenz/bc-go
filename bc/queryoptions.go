@@ -1,19 +1,25 @@
 package bc
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strconv"
 	"strings"
 )
 
+const OrderAscending = "ASC"
+const OrderDescending = "DESC"
+
 // ListPageOptions are the different OData filters and expressions that are
 // sent as query params in the request to an APIPage.
 type ListPageOptions struct {
-	Filter  string
-	Expand  []string
-	Orderby string
-	Top     int
+	Filter         string
+	Expand         []string
+	OrderBy        string
+	OrderDirection string
+	Skip           int
+	Top            int
 }
 
 // BuildQueryParams combines the base filter/expand with the provided ListQueryOptions to return QueryParams
@@ -57,16 +63,21 @@ func (q ListPageOptions) BuildQueryParams(baseFilter string, baseExpand []string
 	}
 
 	// Set $orderby if exists
-	if q.Orderby != "" {
-		if q.Orderby != "ASC" && q.Orderby != "DESC" {
-			return nil, fmt.Errorf("bad orderby format '%s', must be either 'DESC' or 'ASC'", q.Orderby)
+	validOrderDirections := []string{"", "ASC", "DESC"}
+
+	if q.OrderBy != "" {
+		if !slices.Contains(validOrderDirections, q.OrderDirection) {
+			return nil, fmt.Errorf("invalid order direction '%s', must be ASC or DESC", q.OrderDirection)
 		}
-		qp["$orderby"] = q.Orderby
+		dir := cmp.Or(q.OrderDirection, "ASC")
+		qp["$orderby"] = fmt.Sprintf("%s %s", q.OrderBy, dir)
 	}
 
 	// Set $top if exists
 	if q.Top != 0 {
 		qp["$top"] = strconv.Itoa(q.Top)
+
+		qp["$skip"] = strconv.Itoa(q.Skip)
 	}
 
 	return qp, nil

@@ -10,10 +10,11 @@ func TestBuildQueryParams(t *testing.T) {
 	expands := []string{"salesLines", "customer"}
 
 	opts := ListPageOptions{
-		Filter:  filter,
-		Expand:  expands,
-		Top:     5,
-		Orderby: "ASC",
+		Filter:         filter,
+		Expand:         expands,
+		Top:            5,
+		OrderBy:        "number",
+		OrderDirection: OrderAscending,
 	}
 
 	qp, err := opts.BuildQueryParams("", nil)
@@ -33,8 +34,39 @@ func TestBuildQueryParams(t *testing.T) {
 		t.Errorf(`wrong top: expected "5", got "%s"`, qp["$top"])
 	}
 
-	if qp["$orderby"] != "ASC" {
+	if qp["$skip"] != "0" {
+		t.Errorf(`wrong skip: expected "0", got "%s"`, qp["$skip"])
+	}
+
+	if qp["$orderby"] != "number ASC" {
 		t.Errorf(`wrong top: expected "ASC", got "%s"`, qp["$orderby"])
+	}
+
+	opts = ListPageOptions{
+		Top:            10,
+		Skip:           20,
+		OrderBy:        "number",
+		OrderDirection: OrderDescending,
+	}
+	qp, err = opts.BuildQueryParams("", nil)
+	if err != nil {
+		t.Fatalf("failed at BuildQueryParams: %s", err)
+	}
+	if qp["$skip"] != "20" {
+		t.Errorf(`wrong skip: expected "20", got "%s"`, qp["$skip"])
+	}
+
+	if qp["$orderby"] != "number DESC" {
+		t.Errorf(`wrong top: expected "ASC", got "%s"`, qp["$orderby"])
+	}
+
+	opts = ListPageOptions{
+		OrderBy:        "number",
+		OrderDirection: "BAD DIRECTION",
+	}
+	qp, err = opts.BuildQueryParams("", nil)
+	if err == nil {
+		t.Errorf("expected error, got %s", qp["$orderby"])
 	}
 
 }
@@ -48,7 +80,7 @@ func TestBuildQueryParamsWithBase(t *testing.T) {
 		Filter:  filter,
 		Expand:  expands,
 		Top:     5,
-		Orderby: "ASC",
+		OrderBy: "number",
 	}
 
 	baseFilter := "documentType eq 'Order'"

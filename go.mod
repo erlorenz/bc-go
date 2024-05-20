@@ -1,6 +1,6 @@
 module github.com/erlorenz/bc-go
 
-go 1.22.0
+go 1.22.3
 
 retract (
 	// Published v1 too early
