@@ -50,7 +50,7 @@ func TestNewClient(t *testing.T) {
 	t.Run("IsCommon", func(t *testing.T) {
 
 		want := false
-		got := client.IsCommon()
+		got := client.IsV2()
 		if want != got {
 			t.Errorf("expected %t, got %t", want, got)
 		}
@@ -82,7 +82,7 @@ func TestNewClientCommon(t *testing.T) {
 	t.Run("IsCommon", func(t *testing.T) {
 
 		want := true
-		got := client.IsCommon()
+		got := client.IsV2()
 		if want != got {
 			t.Logf("client: %+v", client)
 			t.Errorf("expected %t, got %t", want, got)
