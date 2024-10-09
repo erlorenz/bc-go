@@ -16,9 +16,9 @@ import (
 // SetBaseExpand.
 type APIPage[T Validator] struct {
 	entitySetName string
-	baseFilter    string
 	client        *Client
-	baseExpand    []string
+	BaseFilter    string
+	BaseExpand    []string
 }
 
 // APIListResponse is the response body of a valid GET request that does not
@@ -27,46 +27,32 @@ type APIListResponse[T any] struct {
 	Value []T `json:"value" validate:"required,dive"`
 }
 
+// Validate implements the Validator interface. It validates
+// each row.
 func (a APIListResponse[T]) Validate() error {
 	return ValidateStruct(a)
 }
 
-// NewAPIPage creates an instance of an APIPage. It validates
-// that the *Client is not nil and entitySetName is not empty. Call SetBaseExpand or SetBaseFilter
-// on the APIPage to set the baseExpand/baseFilter.
-func NewAPIPage[T Validator](client *Client, entitySetName string) (*APIPage[T], error) {
+// NewAPIPage creates an instance of an APIPage. It panics if client or entitySetName are empty.
+// Call SetBaseExpand or SetBaseFilter to set filters/expand for all requests.
+func NewAPIPage[T Validator](client *Client, entitySetName string) *APIPage[T] {
 	if client == nil {
-		return nil, errors.New("failed at NewAPIPage: client is nil")
+		panic("create API page: client is nil")
 	}
 
 	if entitySetName == "" {
-		return nil, errors.New("failed at NewAPIPage: entitySetName is empty")
+		panic("create API page: entitySetName is empty")
 	}
 	return &APIPage[T]{
 		entitySetName: entitySetName,
 		client:        client,
-	}, nil
-}
-
-// Sets the baseExpand slice. This will be added to all request expand expressions.
-func (a *APIPage[T]) SetBaseExpand(expands []string) {
-	a.baseExpand = expands
+	}
 }
 
 // Adds a new string to the baseExpand slice. This will be added
 // to all request expand expressions.
 func (a *APIPage[T]) AddBaseExpand(expand string) {
-	a.baseExpand = append(a.baseExpand, expand)
-}
-
-// Returns the BaseExpand.
-func (a *APIPage[T]) BaseExpand() []string {
-	return a.baseExpand
-}
-
-// Sets the base filter string. This will be added to all request filters.
-func (a *APIPage[T]) SetBaseFilter(filter string) {
-	a.baseFilter = filter
+	a.BaseExpand = append(a.BaseExpand, expand)
 }
 
 // Get makes a GET request to the endpoint and retrieves a single record T.
@@ -77,9 +63,9 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 	qp := QueryParams{}
 
 	// Add new expands to base
-	expands := a.baseExpand
+	expands := a.BaseExpand
 	if len(expand) > 0 {
-		expands = slices.Concat(a.baseExpand, expand)
+		expands = slices.Concat(a.BaseExpand, expand)
 	}
 
 	qp["$expand"] = strings.Join(expands, ",")
@@ -119,7 +105,7 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 func (a *APIPage[T]) List(ctx context.Context, queryOpts ListPageOptions) ([]T, error) {
 	var v []T
 
-	qp, err := queryOpts.BuildQueryParams(a.baseFilter, a.baseExpand)
+	qp, err := queryOpts.BuildQueryParams(a.BaseFilter, a.BaseExpand)
 	if err != nil {
 		return v, fmt.Errorf("failed at BuildQueryParams: %w", err)
 	}
@@ -147,8 +133,8 @@ func (a *APIPage[T]) List(ctx context.Context, queryOpts ListPageOptions) ([]T, 
 			return v, fmt.Errorf("error from BC API: %w", srvErr)
 		}
 
-		a.client.logger.Debug("Failed to decode response.", "error", err)
-		return v, fmt.Errorf("failed to decode response: %w", err)
+		a.client.logger.Debug("Unable to decode response.", "error", err)
+		return v, fmt.Errorf("decode response: %w", err)
 	}
 	v = list.Value
 	return v, nil
@@ -162,9 +148,9 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 	qp := QueryParams{}
 
 	// Add new expands to base
-	expands := a.baseExpand
+	expands := a.BaseExpand
 	if len(expand) > 0 {
-		expands = slices.Concat(a.baseExpand, expand)
+		expands = slices.Concat(a.BaseExpand, expand)
 	}
 
 	if len(expands) > 0 {
@@ -185,7 +171,7 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 		return v, fmt.Errorf("failed to create Request: %w", err)
 	}
 
-	a.client.logger.Info("Sending request...", "url", req.URL.String(), "method", req.Method)
+	a.client.logger.Debug("Sending request...", "url", req.URL.String(), "method", req.Method)
 
 	res, err := a.client.Do(req)
 	if err != nil {
@@ -216,9 +202,9 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 	qp := QueryParams{}
 
 	// Add new expands to base
-	expands := a.baseExpand
+	expands := a.BaseExpand
 	if len(expand) > 0 {
-		expands = slices.Concat(a.baseExpand, expand)
+		expands = slices.Concat(a.BaseExpand, expand)
 	}
 
 	if len(expands) > 0 {

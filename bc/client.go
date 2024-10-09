@@ -1,12 +1,15 @@
 package bc
 
 import (
-	"errors"
+	"cmp"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 // Client is used to send and receive HTTP requests/responses to the
@@ -26,54 +29,71 @@ type Client struct {
 // Meets the Validator interface.
 type ClientConfig struct {
 	// TenantID is the Entra Tenant ID for the organization.
-	TenantID GUID
+	TenantID string
 	// CompanyID is the BC company within the environment.
-	CompanyID GUID
+	CompanyID string
 	// Environment must be a non-empty string.
 	Environment string
 	// APIEndpoint must be either "v2.0" or the format
 	//"<publisher>/<group>/<version>".
 	APIEndpoint string
+	// ClientID is also known as the application ID.
+	ClientID string
+	//ClientSecret is the MSAL client secret for the application.
+	ClientSecret string
 }
 
 // Validates that the params are all in correct format.
-func (p ClientConfig) Validate() error {
-	var errs error
+func (cc ClientConfig) Validate() error {
+	var errs []string
 
-	if err := p.TenantID.Validate(); err != nil {
-		errs = errors.Join(errs, fmt.Errorf("invalid TenantID: %w", err))
+	if _, err := uuid.Parse(cc.TenantID); err != nil {
+		errs = append(errs, fmt.Sprintf("TenantID: %s", err))
 	}
 
-	if err := p.CompanyID.Validate(); err != nil {
-		errs = errors.Join(errs, fmt.Errorf("invalid CompanyID: %w", err))
+	if _, err := uuid.Parse(cc.CompanyID); err != nil {
+		errs = append(errs, fmt.Sprintf("CompanyID: %s", err))
 	}
 
-	if err := stringNotEmpty(p.Environment); err != nil {
-		errs = errors.Join(errs, fmt.Errorf("invalid Environment: %w", err))
+	if err := stringNotEmpty(cc.Environment); err != nil {
+		errs = append(errs, fmt.Sprintf("Environment: %s", err))
 	}
 
-	if p.APIEndpoint == "v2.0" {
-		return errs
+	if _, err := uuid.Parse(cc.ClientID); err != nil {
+		errs = append(errs, fmt.Sprintf("ClientID: %s", err))
 	}
 
-	segmentCount := len(strings.Split(p.APIEndpoint, "/"))
+	if err := stringNotEmpty(cc.ClientSecret); err != nil {
+		errs = append(errs, fmt.Sprintf("ClientSecret: %s", err))
+	}
+
+	if cc.APIEndpoint == "v2.0" {
+		if len(errs) > 0 {
+			return fmt.Errorf("validate config: [%s]", strings.Join(errs, ", "))
+		}
+		return nil
+	}
+
+	segmentCount := len(strings.Split(cc.APIEndpoint, "/"))
 	if segmentCount == 3 {
-		return errs
+		if len(errs) > 0 {
+			return fmt.Errorf("validate config: [%s]", strings.Join(errs, ", "))
+		}
+		return nil
 	}
 
-	errs = errors.Join(errs, fmt.Errorf("invalid APIEndpoint: must equal %q or have 3 path segments", "v2.0"))
+	errs = append(errs, fmt.Sprintf("APIEndpoint: must equal %q or have 3 path segments", "v2.0"))
 
-	return errs
+	return fmt.Errorf("validate config: [%s]", strings.Join(errs, ", "))
 }
 
-// New client takes the mandatory ClientConfig params, a TokenGetter, and
-// optional configuration using the functional options pattern.
-// Logger and HTTPClient will be set to defaults if not optionally set.
-func NewClient(config ClientConfig, authClient TokenGetter, opts ...ClientOptionFunc) (*Client, error) {
+// NewClient creates a [Client] with configuration params and optional configuration with functional options.
+// Available options are [WithAuthClient], [WithLogger], [WithHTTPClient].
+func NewClient(config ClientConfig, opts ...ClientOption) (*Client, error) {
 
 	// Validate params
 	if err := config.Validate(); err != nil {
-		return nil, fmt.Errorf("validation error: \n%w", err)
+		return nil, fmt.Errorf("validate config: \n%w", err)
 	}
 
 	// Create the base URL
@@ -87,14 +107,26 @@ func NewClient(config ClientConfig, authClient TokenGetter, opts ...ClientOption
 	isCommon := config.APIEndpoint == "v2.0"
 
 	client := &Client{
-		baseURL:    baseURL,
-		authClient: authClient,
-		config:     config,
-		common:     isCommon,
+		baseURL: baseURL,
+		config:  config,
+		common:  isCommon,
 	}
 
 	// Apply the optional functions to the client
-	setClientOptions(client, opts)
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	if client.authClient == nil {
+		ac, err := NewAuth(config.TenantID, config.ClientID, config.ClientSecret)
+		if err != nil {
+			return nil, err
+		}
+		client.authClient = ac
+	}
+
+	client.logger = cmp.Or(client.logger, slog.Default())
+	client.baseClient = cmp.Or(client.baseClient, &http.Client{Timeout: 20 * time.Second})
 
 	return client, nil
 }
@@ -115,7 +147,7 @@ func (c *Client) Config() ClientConfig {
 	return c.config
 }
 
-// BaseClient returns the baseClient *http.Client.
+// BaseClient returns the baseClient [http.Client].
 func (c *Client) BaseClient() *http.Client {
 	return c.baseClient
 }

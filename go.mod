@@ -2,16 +2,14 @@ module github.com/erlorenz/bc-go
 
 go 1.22.3
 
-retract (
-	// Published v1 too early
-	[v1.0.0, v1.0.1]
-)
-
+// Published v1 too early
+retract [v1.0.0, v1.0.1]
 
 require (
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2
 	github.com/go-playground/validator/v10 v10.18.0
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 )
 
 require (

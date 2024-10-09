@@ -9,10 +9,11 @@ import (
 	"time"
 
 	"github.com/erlorenz/bc-go/bc"
-	"github.com/erlorenz/bc-go/bctest"
+	"github.com/erlorenz/bc-go/internal/bctest"
+	"github.com/google/uuid"
 )
 
-var validGUID = bctest.NewGUID()
+var validGUID = uuid.NewString()
 
 var validErrorResponse = bc.ErrorResponse{
 	Error: bc.ErrorResponseError{

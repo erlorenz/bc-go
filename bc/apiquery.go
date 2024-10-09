@@ -9,73 +9,66 @@ import (
 	"strings"
 )
 
+// APIQuery interacts with a BC API Query.
 type APIQuery[T any] struct {
 	entitySetName string
-	baseFilter    string
 	client        *Client
+	BaseFilter    string
+	BaseSelect    []string
 }
 
-func NewAPIQuery[T any](client *Client, entitySetName string) (*APIQuery[T], error) {
+// NewAPIQuery returns an [APIQuery]. It panics if missing a client or entitySetName.
+func NewAPIQuery[T any](client *Client, entitySetName string) *APIQuery[T] {
 	if client == nil {
-		return nil, errors.New("failed at NewAPIPage: client is nil")
+		panic("create API query: client is nil")
+	}
+	if entitySetName == "" {
+		panic("create API query: entitySetName is empty")
 	}
 
-	if entitySetName == "" {
-		return nil, errors.New("failed at NewAPIPage: entitySetName is empty")
-	}
 	return &APIQuery[T]{
 		entitySetName: entitySetName,
 		client:        client,
-	}, nil
+	}
 }
 
-func (q *APIQuery[T]) SetBaseFilter(filter string) {
-	q.baseFilter = filter
-}
-
-func (q *APIQuery[T]) List(ctx context.Context, filter string, orderby string, top int) ([]T, error) {
+// List
+func (q *APIQuery[T]) List(ctx context.Context, opts ListPageOptions) ([]T, error) {
 	var v []T
 
 	filterStrings := []string{}
 	// Add the baseFilter
-	if q.baseFilter != "" {
-		filterStrings = append(filterStrings, q.baseFilter)
+	if q.BaseFilter != "" {
+		filterStrings = append(filterStrings, q.BaseFilter)
 	}
 
 	// Add the filter and surround with "()" if there is a baseFilter
-	if filter != "" {
-		if q.baseFilter != "" {
-			filter = fmt.Sprintf("(%s)", filter)
+	if opts.Filter != "" {
+		if q.BaseFilter != "" {
+			opts.Filter = fmt.Sprintf("(%s)", opts.Filter)
 		}
-		filterStrings = append(filterStrings, filter)
+		filterStrings = append(filterStrings, opts.Filter)
 	}
 
-	filter = strings.Join(filterStrings, " and ")
+	filter := strings.Join(filterStrings, " and ")
 
 	qp := QueryParams{}
+
 	if filter != "" {
 		qp["$filter"] = filter
 	}
 
-	// Set $orderby if exists
-	if orderby != "" {
-		if orderby != "ASC" && orderby != "DESC" {
-			return nil, fmt.Errorf("bad orderby format '%s', must be either 'DESC' or 'ASC'", orderby)
-		}
-		qp["$orderby"] = orderby
-	}
-
 	// Set $top if exists
-	if top > 0 {
-		qp["$top"] = strconv.Itoa(top)
+	if opts.Top > 0 {
+		qp["$top"] = strconv.Itoa(opts.Top)
 	}
 
-	opts := RequestOptions{
+	ropts := RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: q.entitySetName,
 		QueryParams:   qp,
 	}
-	req, err := q.client.NewRequest(ctx, opts)
+	req, err := q.client.NewRequest(ctx, ropts)
 	if err != nil {
 		return v, fmt.Errorf("failed to create Request: %w", err)
 	}

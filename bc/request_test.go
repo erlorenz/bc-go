@@ -10,12 +10,12 @@ import (
 	"testing"
 
 	"github.com/erlorenz/bc-go/bc"
-	"github.com/erlorenz/bc-go/bctest"
+	"github.com/erlorenz/bc-go/internal/bctest"
 )
 
 func TestMakeRequestGetNoParams(t *testing.T) {
 
-	client, err := bc.NewClient(fakeConfig, &fakeTokenGetter{})
+	client, err := bc.NewClient(fakeConfig, bc.WithAuthClient(&fakeTokenGetter{}))
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}
@@ -75,7 +75,7 @@ func TestMakeRequestGetCommonEndpoint(t *testing.T) {
 	commonConfig := fakeConfig
 	commonConfig.APIEndpoint = "v2.0"
 
-	client, err := bc.NewClient(commonConfig, fakeTokenGetter{})
+	client, err := bc.NewClient(commonConfig, bc.WithAuthClient(fakeTokenGetter{}))
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}
@@ -104,7 +104,7 @@ func TestMakeRequestGetCommonEndpoint(t *testing.T) {
 
 func TestMakeRequestPost(t *testing.T) {
 
-	client, err := bc.NewClient(fakeConfig, fakeTokenGetter{})
+	client, err := bc.NewClient(fakeConfig, bc.WithAuthClient(fakeTokenGetter{}))
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}
@@ -146,7 +146,7 @@ func TestMakeRequestPost(t *testing.T) {
 
 func TestMakeRequestGetParams(t *testing.T) {
 
-	client, err := bc.NewClient(fakeConfig, fakeTokenGetter{})
+	client, err := bc.NewClient(fakeConfig, bc.WithAuthClient(fakeTokenGetter{}))
 	if err != nil {
 		t.Fatalf("failed to create new client: %s", err)
 	}

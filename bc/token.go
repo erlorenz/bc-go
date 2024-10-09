@@ -1,11 +1,9 @@
 package bc
 
 import (
-	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 )
@@ -28,22 +26,11 @@ type TokenGetter interface {
 }
 
 // NewAuth validates the AuthParams and creates a new AuthClient.
-func NewAuth(tenantID GUID, clientID GUID, clientSecret string, logger *slog.Logger) (*Auth, error) {
-
-	// Use default logger if none provided
-	logger = cmp.Or(logger, slog.Default())
-
-	// Validate config values
-	if err := validateParams(tenantID, clientID, clientSecret); err != nil {
-		err = fmt.Errorf("params validation error: %w", err)
-		logger.Debug("validate params error", "error", err.Error())
-		return nil, err
-	}
+func NewAuth(tenantID, clientID, clientSecret string) (*Auth, error) {
 
 	cred, err := confidential.NewCredFromSecret(clientSecret)
 	if err != nil {
-		err = fmt.Errorf("NewCredFromSecret error: %w", err)
-		logger.Debug("NewCredFromSecret error", "error", err.Error())
+		err = fmt.Errorf("authClient secret: %w", err)
 		return nil, err
 	}
 
@@ -51,8 +38,7 @@ func NewAuth(tenantID GUID, clientID GUID, clientSecret string, logger *slog.Log
 
 	confidentialClient, err := confidential.New(authority, string(clientID), cred)
 	if err != nil {
-		err = fmt.Errorf("new confidentialClient error: %w", err)
-		logger.Debug("new confidentialClient error", "error", err.Error())
+		err = fmt.Errorf("authclient confidentialClient: %w", err)
 		return nil, err
 	}
 
@@ -63,7 +49,7 @@ func NewAuth(tenantID GUID, clientID GUID, clientSecret string, logger *slog.Log
 	return &Auth{
 		client: confidentialClient,
 		scopes: scopes,
-		logger: logger,
+		logger: slog.Default(),
 	}, nil
 
 }
@@ -83,21 +69,4 @@ func (ac *Auth) GetToken(ctx context.Context) (AccessToken, error) {
 	}
 	ac.logger.Debug("Successfully acquired token.")
 	return AccessToken(result.AccessToken), nil
-}
-
-func validateParams(tenantID GUID, clientID GUID, clientSecret string) error {
-	problems := []string{}
-	if err := tenantID.Validate(); err != nil {
-		problems = append(problems, fmt.Errorf("tenantID invalid (%w)", err).Error())
-	}
-	if err := clientID.Validate(); err != nil {
-		problems = append(problems, fmt.Errorf("clientID invalid (%w)", err).Error())
-	}
-	if clientSecret == "" {
-		problems = append(problems, "clientSecret invalid (is empty)")
-	}
-	if len(problems) > 0 {
-		return fmt.Errorf(strings.Join(problems, ", "))
-	}
-	return nil
 }

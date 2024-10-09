@@ -1,31 +1,25 @@
 package bc
 
 import (
-	"cmp"
 	"fmt"
 	"slices"
 	"strconv"
 	"strings"
 )
 
-const OrderAscending = "ASC"
-const OrderDescending = "DESC"
-
-// ListPageOptions are the different OData filters and expressions that are
-// sent as query params in the request to an APIPage.
+// ListPageOptions build the Query
 type ListPageOptions struct {
-	Filter         string
-	Expand         []string
-	OrderBy        string
-	OrderDirection string
-	Skip           int
-	Top            int
+	Filter  string   // The filter expression. Combined with the BaseFilter.
+	Expand  []string // The expandable fields. Added to the BaseExpand.
+	OrderBy []string // The fields to order by, e.g. "field1 desc" or "field1". Ascending is default.
+	Select  []string // The fields to return.
+	Skip    int      // The number of records to skip. Do not use for pagination.
+	Top     int      // The number of records to return. Do not use for pagination.
 }
 
 // BuildQueryParams combines the base filter/expand with the provided ListQueryOptions to return QueryParams
 // for the request.
-func (q ListPageOptions) BuildQueryParams(baseFilter string, baseExpand []string) (QueryParams, error) {
-
+func (q *ListPageOptions) BuildQueryParams(baseFilter string, baseExpand []string) (QueryParams, error) {
 	// Filter should be in format "<baseFilter> and (<extrafilter>)"
 	// Only supports adding to the base filter --don't use base filter if you need an "or"
 	filterStrings := []string{}
@@ -62,15 +56,8 @@ func (q ListPageOptions) BuildQueryParams(baseFilter string, baseExpand []string
 		qp["$expand"] = expand
 	}
 
-	// Set $orderby if exists
-	validOrderDirections := []string{"", "ASC", "DESC"}
-
-	if q.OrderBy != "" {
-		if !slices.Contains(validOrderDirections, q.OrderDirection) {
-			return nil, fmt.Errorf("invalid order direction '%s', must be ASC or DESC", q.OrderDirection)
-		}
-		dir := cmp.Or(q.OrderDirection, "ASC")
-		qp["$orderby"] = fmt.Sprintf("%s %s", q.OrderBy, dir)
+	if len(q.OrderBy) > 0 {
+		qp["$orderby"] = strings.Join(q.OrderBy, ",")
 	}
 
 	// Set $top if exists

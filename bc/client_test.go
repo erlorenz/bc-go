@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/erlorenz/bc-go/bc"
-	"github.com/erlorenz/bc-go/bctest"
+	"github.com/erlorenz/bc-go/internal/bctest"
+	"github.com/google/uuid"
 )
 
 // FakeTokenGetter satisfies the TokenGetter interface.
@@ -22,15 +23,17 @@ func (ac fakeTokenGetter) GetToken(context.Context) (bc.AccessToken, error) {
 }
 
 var fakeConfig = bc.ClientConfig{
-	TenantID:    validGUID,
-	Environment: "Sandbox",
-	APIEndpoint: "publisher/group/1.0",
-	CompanyID:   validGUID,
+	TenantID:     validGUID,
+	Environment:  "Sandbox",
+	APIEndpoint:  "publisher/group/1.0",
+	CompanyID:    validGUID,
+	ClientID:     validGUID,
+	ClientSecret: "SECRET",
 }
 
 func TestNewClient(t *testing.T) {
 
-	client, err := bc.NewClient(fakeConfig, &fakeTokenGetter{})
+	client, err := bc.NewClient(fakeConfig, bc.WithAuthClient(&fakeTokenGetter{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +64,7 @@ func TestNewClientCommon(t *testing.T) {
 	config := fakeConfig
 	config.APIEndpoint = "v2.0"
 
-	client, err := bc.NewClient(config, &fakeTokenGetter{})
+	client, err := bc.NewClient(config, bc.WithAuthClient(&fakeTokenGetter{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +116,7 @@ func TestClientWithOptions(t *testing.T) {
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
-	client, err := bc.NewClient(fakeConfig, &fakeTokenGetter{}, bc.WithHTTPClient(httpClient), bc.WithLogger(logger))
+	client, err := bc.NewClient(fakeConfig, bc.WithAuthClient(&fakeTokenGetter{}), bc.WithHTTPClient(httpClient), bc.WithLogger(logger))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,14 +142,14 @@ func TestClientWithOptions(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	tenantID := bctest.NewGUID()
-	companyID := bctest.NewGUID()
 
 	validConfig := bc.ClientConfig{
-		TenantID:    tenantID,
-		CompanyID:   companyID,
-		Environment: "TEST",
-		APIEndpoint: "v2.0",
+		TenantID:     uuid.NewString(),
+		CompanyID:    uuid.NewString(),
+		Environment:  "TEST",
+		APIEndpoint:  "v2.0",
+		ClientID:     uuid.NewString(),
+		ClientSecret: "SECRET",
 	}
 
 	emptyConfig := bc.ClientConfig{}
@@ -166,12 +169,12 @@ func TestConfig(t *testing.T) {
 	table := []testCase{
 		{"valid", validConfig, true},
 		{"empty", emptyConfig, false},
-		{"missing CompanyID", emptyConfig, false},
+		{"missing CompanyID", missingCompanyID, false},
 		{"invalid GUID", invalidGUID, false},
 	}
 
 	for _, test := range table {
-		_, err := bc.NewClient(test.config, fakeTokenGetter{})
+		_, err := bc.NewClient(test.config, bc.WithAuthClient(fakeTokenGetter{}))
 		passed := err == nil
 		if test.shouldPass != passed {
 			t.Errorf("%s: wanted %t, got %t: %s", test.name, test.shouldPass, passed, err)

@@ -91,13 +91,13 @@ func (c *Client) NewRequest(ctx context.Context, opts RequestOptions) (*http.Req
 	// Create Request
 	req, err := http.NewRequestWithContext(ctx, opts.Method, newURL.String(), body)
 	if err != nil {
-		return nil, fmt.Errorf("error creating NewRequestWithContext: %w", err)
+		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
 	// Add the Authorization header for each request
 	bearerToken, err := getBearerToken(ctx, c.authClient)
 	if err != nil {
-		return nil, fmt.Errorf("error creating Auth header: %w", err)
+		return nil, fmt.Errorf("create auth header: %w", err)
 	}
 	req.Header.Set("Authorization", bearerToken)
 
@@ -134,6 +134,7 @@ func getBearerToken(ctx context.Context, tg TokenGetter) (string, error) {
 
 }
 
+// Do calls Do on the baseClient.
 func (c *Client) Do(r *http.Request) (*http.Response, error) {
 	return c.baseClient.Do(r)
 }

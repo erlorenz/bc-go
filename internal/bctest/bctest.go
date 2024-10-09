@@ -1,4 +1,3 @@
-// Package bctest
 package bctest
 
 import (
@@ -6,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/erlorenz/bc-go/bc"
 	"github.com/google/uuid"
 )
 
@@ -25,10 +23,10 @@ func NewRequestBody(v any) io.ReadCloser {
 }
 
 // NewGUID generates a random UUID and casts it to a GUID.
-func NewGUID() bc.GUID {
+func NewGUID() string {
 	uuid := uuid.New().String()
 
-	return bc.GUID(uuid)
+	return uuid
 }
 
 const (

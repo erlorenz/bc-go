@@ -10,11 +10,10 @@ func TestBuildQueryParams(t *testing.T) {
 	expands := []string{"salesLines", "customer"}
 
 	opts := ListPageOptions{
-		Filter:         filter,
-		Expand:         expands,
-		Top:            5,
-		OrderBy:        "number",
-		OrderDirection: OrderAscending,
+		Filter:  filter,
+		Expand:  expands,
+		Top:     5,
+		OrderBy: []string{"number asc"},
 	}
 
 	qp, err := opts.BuildQueryParams("", nil)
@@ -38,15 +37,14 @@ func TestBuildQueryParams(t *testing.T) {
 		t.Errorf(`wrong skip: expected "0", got "%s"`, qp["$skip"])
 	}
 
-	if qp["$orderby"] != "number ASC" {
-		t.Errorf(`wrong top: expected "ASC", got "%s"`, qp["$orderby"])
+	if qp["$orderby"] != "number asc" {
+		t.Errorf(`wrong orderby: expected "number asc", got "%s"`, qp["$orderby"])
 	}
 
 	opts = ListPageOptions{
-		Top:            10,
-		Skip:           20,
-		OrderBy:        "number",
-		OrderDirection: OrderDescending,
+		Top:     10,
+		Skip:    20,
+		OrderBy: []string{"number desc"},
 	}
 	qp, err = opts.BuildQueryParams("", nil)
 	if err != nil {
@@ -56,18 +54,11 @@ func TestBuildQueryParams(t *testing.T) {
 		t.Errorf(`wrong skip: expected "20", got "%s"`, qp["$skip"])
 	}
 
-	if qp["$orderby"] != "number DESC" {
-		t.Errorf(`wrong top: expected "ASC", got "%s"`, qp["$orderby"])
+	if qp["$orderby"] != "number desc" {
+		t.Errorf(`wrong orderby: expected "number desc", got "%s"`, qp["$orderby"])
 	}
 
-	opts = ListPageOptions{
-		OrderBy:        "number",
-		OrderDirection: "BAD DIRECTION",
-	}
-	qp, err = opts.BuildQueryParams("", nil)
-	if err == nil {
-		t.Errorf("expected error, got %s", qp["$orderby"])
-	}
+	opts.OrderBy = []string{"number"}
 
 }
 
@@ -80,7 +71,7 @@ func TestBuildQueryParamsWithBase(t *testing.T) {
 		Filter:  filter,
 		Expand:  expands,
 		Top:     5,
-		OrderBy: "number",
+		OrderBy: []string{"number asc"},
 	}
 
 	baseFilter := "documentType eq 'Order'"
@@ -106,8 +97,8 @@ func TestBuildQueryParamsWithBase(t *testing.T) {
 		t.Errorf(`wrong top: expected "5", got "%s"`, qp["$top"])
 	}
 
-	if qp["$orderby"] != "ASC" {
-		t.Errorf(`wrong top: expected "ASC", got "%s"`, qp["$orderby"])
+	if qp["$orderby"] != "number asc" {
+		t.Errorf(`wrong orderby: expected "number asc", got "%s"`, qp["$orderby"])
 	}
 
 }

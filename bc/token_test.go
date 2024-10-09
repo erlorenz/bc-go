@@ -9,8 +9,8 @@ import (
 func TestNewAuthClient(t *testing.T) {
 
 	type params struct {
-		tenantID     bc.GUID
-		clientID     bc.GUID
+		tenantID     string
+		clientID     string
 		clientSecret string
 	}
 
@@ -27,7 +27,7 @@ func TestNewAuthClient(t *testing.T) {
 
 	for _, v := range table {
 		t.Run(v.name, func(t *testing.T) {
-			_, err := bc.NewAuth(v.params.tenantID, v.params.clientID, v.params.clientSecret, nil)
+			_, err := bc.NewAuth(v.params.tenantID, v.params.clientID, v.params.clientSecret)
 			want := v.want
 			got := err == nil
 			if want != got {

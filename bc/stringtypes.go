@@ -2,11 +2,13 @@ package bc
 
 import (
 	"fmt"
-	"net/url"
 	"unicode/utf8"
 )
 
 // GUID represents a Microsoft GUID and implements the Validator interface.
+//
+// Deprecated: GUID exists for compatibility and should not be used. Prefer
+// using uuid.UUID to be compatible with all.
 type GUID string
 
 func (id GUID) Validate() error {
@@ -14,15 +16,5 @@ func (id GUID) Validate() error {
 		return fmt.Errorf("'%s' is not valid GUID", id)
 	}
 	return nil
-}
 
-// URL represents a URL string and implements the Validator interface
-type URLString string
-
-func (u URLString) Validate() error {
-	_, err := url.ParseRequestURI(string(u))
-	if err != nil {
-		return fmt.Errorf("'%s' is not valid URL", u)
-	}
-	return nil
 }

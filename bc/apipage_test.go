@@ -9,12 +9,15 @@ import (
 
 func TestAPIPageExpand(t *testing.T) {
 
-	client, _ := bc.NewClient(fakeConfig, fakeTokenGetter{})
-	apiPage, _ := bc.NewAPIPage[fakeEntity](client, "fakeEntities")
+	client, err := bc.NewClient(fakeConfig, bc.WithAuthClient(fakeTokenGetter{}))
+	if err != nil {
+		t.Fatalf("Did not expect error at newclient, got %s", err)
+	}
+	apiPage := bc.NewAPIPage[fakeEntity](client, "fakeEntities")
 
 	apiPage.AddBaseExpand("lines")
 	want := "lines"
-	got := strings.Join(apiPage.BaseExpand(), ",")
+	got := strings.Join(apiPage.BaseExpand, ",")
 
 	if want != got {
 		t.Errorf("add1: wanted %s, got %s", want, got)
@@ -22,15 +25,15 @@ func TestAPIPageExpand(t *testing.T) {
 
 	apiPage.AddBaseExpand("lines")
 	want = "lines,lines"
-	got = strings.Join(apiPage.BaseExpand(), ",")
+	got = strings.Join(apiPage.BaseExpand, ",")
 
 	if want != got {
 		t.Errorf("add2: wanted %s, got %s", want, got)
 	}
 
-	apiPage.SetBaseExpand([]string{"lines", "customer"})
+	apiPage.BaseExpand = []string{"lines", "customer"}
 	want = "lines,customer"
-	got = strings.Join(apiPage.BaseExpand(), ",")
+	got = strings.Join(apiPage.BaseExpand, ",")
 
 	if want != got {
 		t.Errorf("add3: wanted %s, got %s", want, got)
