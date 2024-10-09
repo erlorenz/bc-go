@@ -3,6 +3,8 @@ package bc
 import (
 	"fmt"
 	"net/url"
+
+	"github.com/google/uuid"
 )
 
 // dksdlfjdsja
@@ -30,7 +32,7 @@ func BuildBaseURL(cfg ClientConfig) (*url.URL, error) {
 // BuildRequestURL builds a URL to be used in an http.Request.
 // It uses the structure
 // https://api.businesscentral.dynamics.com/v2.0/{tenantID}/{environment}/api/{APIendpoint}/companies({companyID})/{entitySet}({recordID})?{queryParams}
-func BuildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryParams QueryParams) url.URL {
+func BuildRequestURL(baseURL url.URL, entitySet string, recordID uuid.UUID, queryParams QueryParams) url.URL {
 
 	newURL := baseURL
 	// Don't forget the slash in between
@@ -38,7 +40,7 @@ func BuildRequestURL(baseURL url.URL, entitySet string, recordID GUID, queryPara
 	newURL.Path += entitySetPath
 
 	// Add recordID if exists
-	if recordID != "" {
+	if recordID != uuid.Nil {
 		newURL.Path += fmt.Sprintf("(%s)", recordID)
 	}
 

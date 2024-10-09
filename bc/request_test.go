@@ -39,7 +39,7 @@ func TestMakeRequestGetNoParams(t *testing.T) {
 			t.Fatalf("failed reading body into buffer")
 		}
 		got := buf.String()
-		want := bctest.EmptyString
+		want := ""
 		if got != want {
 			t.Errorf("got %s, wanted %s", got, want)
 		}
@@ -53,12 +53,12 @@ func TestMakeRequestGetNoParams(t *testing.T) {
 	}
 	table := []testStruct{
 		{"Method", req.Method, "GET"},
-		{"Query", req.URL.RawQuery, bctest.EmptyString},
+		{"Query", req.URL.RawQuery, ""},
 		// Get values and join together with separator so multiple values under same key fail
 		{"Header_Accept", strings.Join(req.Header.Values("Accept"), "--"), bc.AcceptJSONNoMetadata},
-		{"Header_ContentType", strings.Join(req.Header.Values("Content-Type"), "--"), bctest.EmptyString},
+		{"Header_ContentType", strings.Join(req.Header.Values("Content-Type"), "--"), ""},
 		{"Header_DataAccessIntent", strings.Join(req.Header.Values("Data-Access-Intent"), "--"), bc.DataAccessReadOnly},
-		{"Header_IfMatch", strings.Join(req.Header.Values("If-Match"), "--"), bctest.EmptyString},
+		{"Header_IfMatch", strings.Join(req.Header.Values("If-Match"), "--"), ""},
 		// Check entity set name correctly applied
 		{"Path", strings.Split(req.URL.Path, "/")[bctest.PathIndexEntitySetName], "fakeEntities"},
 	}

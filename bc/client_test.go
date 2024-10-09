@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/erlorenz/bc-go/bc"
-	"github.com/erlorenz/bc-go/internal/bctest"
 	"github.com/google/uuid"
 )
 
@@ -155,7 +154,7 @@ func TestConfig(t *testing.T) {
 	emptyConfig := bc.ClientConfig{}
 
 	missingCompanyID := validConfig
-	missingCompanyID.CompanyID = bctest.EmptyString
+	missingCompanyID.CompanyID = ""
 
 	invalidGUID := validConfig
 	invalidGUID.TenantID = "NOT A GUID"

@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 const ContentTypeJSON = "application/json"
@@ -23,44 +24,44 @@ var AcceptJSONNoMetadata = strings.Join([]string{ContentTypeJSON, NoODATAMetadat
 type RequestOptions struct {
 	Method        string
 	EntitySetName string
-	RecordID      GUID
+	RecordID      uuid.UUID
 	QueryParams   QueryParams
 	Body          any
 }
 
+// Validate checks all the fields for invalid combinations or values.
 func (r RequestOptions) Validate() error {
-	var errs error
+	var errs []string
 
 	// Validate method and entity set to be required.
-	if err := stringNotEmpty(r.Method); err != nil {
-		errs = errors.Join(fmt.Errorf("invalid method: %s", err))
+	if r.Method == "" {
+		errs = append(errs, fmt.Sprintf("invalid method: %s", r.Method))
 	}
 
-	if err := stringNotEmpty(r.EntitySetName); err != nil {
-		errs = errors.Join(fmt.Errorf("invalid entitySetName: %s", err))
-	}
-
-	// If record ID validate it
-	if r.RecordID != "" {
-		errs = errors.Join(errs, r.RecordID.Validate())
+	if r.EntitySetName == "" {
+		errs = append(errs, fmt.Sprintf("invalid entitysetname: %s", r.Method))
 	}
 
 	// If body exist the method cant be get or delete
 	if r.Body != nil {
 		if r.Method == http.MethodGet || r.Method == http.MethodDelete {
-			errs = errors.Join(errs, errors.New("invalid combination: cannot have body with GET or DELETE method"))
+			errs = append(errs, "invalid combination: cannot have body with GET or DELETE method")
 		}
 	}
 	// Cannot have filter query params with anything but GET
 	if r.QueryParams != nil && r.QueryParams["$filter"] != "" {
 		if r.Method != http.MethodGet {
-			errs = errors.Join(errs, fmt.Errorf("invalid combination: cannot have $filter query param with method %s", r.Method))
+			errs = append(errs, fmt.Sprintf("invalid combination: cannot have $filter query param with method %s", r.Method))
 		}
 	}
-	if r.Method == http.MethodPatch && r.RecordID == "" {
-		errs = errors.Join(errs, errors.New("invalid combination: cannot have method PATCH with no RecordID"))
+	if r.Method == http.MethodPatch && r.RecordID == uuid.Nil {
+		errs = append(errs, "invalid combination: cannot have method PATCH with no RecordID")
 	}
-	return errs
+
+	if len(errs) > 0 {
+		return fmt.Errorf("invalid requestoptions: [ %s ]", strings.Join(errs, ", "))
+	}
+	return nil
 }
 
 // QueryParams are used to build the http.Request url.

@@ -14,8 +14,8 @@ import (
 )
 
 type Item struct {
-	ID     string `json:"id"`
-	Number string `json:"number"`
+	ID     uuid.UUID `json:"id"`
+	Number string    `json:"number"`
 }
 
 type ItemList struct {
@@ -24,9 +24,6 @@ type ItemList struct {
 
 func (i Item) Validate() error {
 	var errs []string
-	if _, err := uuid.Parse(i.ID); err != nil {
-		errs = append(errs, err.Error())
-	}
 
 	if i.Number == "" {
 		errs = append(errs, "number is empty")

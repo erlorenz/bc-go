@@ -4,12 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-
-	"github.com/google/uuid"
 )
-
-// Represents an empty string.
-const EmptyString = ""
 
 // Utility to create a request body io.ReadCloser.
 // Panics on error marshaling.
@@ -20,13 +15,6 @@ func NewRequestBody(v any) io.ReadCloser {
 	}
 
 	return io.NopCloser(bytes.NewBuffer(b))
-}
-
-// NewGUID generates a random UUID and casts it to a GUID.
-func NewGUID() string {
-	uuid := uuid.New().String()
-
-	return uuid
 }
 
 const (

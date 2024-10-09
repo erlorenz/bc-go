@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // APIPage represents an API page in Business Central.
@@ -57,26 +59,26 @@ func (a *APIPage[T]) AddBaseExpand(expand string) {
 
 // Get makes a GET request to the endpoint and retrieves a single record T.
 // Requires the ID and  takes an optional slice of expand strings.
-func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, error) {
+func (a *APIPage[T]) Get(ctx context.Context, id uuid.UUID, opts GetOptions) (T, error) {
 	var v T
 
 	qp := QueryParams{}
 
 	// Add new expands to base
 	expands := a.BaseExpand
-	if len(expand) > 0 {
-		expands = slices.Concat(a.BaseExpand, expand)
+	if len(opts.Expand) > 0 {
+		expands = slices.Concat(a.BaseExpand, opts.Expand)
 	}
 
 	qp["$expand"] = strings.Join(expands, ",")
 
-	opts := RequestOptions{
+	reqOpts := RequestOptions{
 		Method:        http.MethodGet,
 		EntitySetName: a.entitySetName,
 		RecordID:      id,
 		QueryParams:   qp,
 	}
-	req, err := a.client.NewRequest(ctx, opts)
+	req, err := a.client.NewRequest(ctx, reqOpts)
 	if err != nil {
 		return v, fmt.Errorf("failed to create Request: %w", err)
 	}
@@ -102,13 +104,10 @@ func (a *APIPage[T]) Get(ctx context.Context, id GUID, expand []string) (T, erro
 
 // List makes a GET request to the endpoint and returns []T.
 // It takes optional struct of query options.
-func (a *APIPage[T]) List(ctx context.Context, queryOpts ListPageOptions) ([]T, error) {
+func (a *APIPage[T]) List(ctx context.Context, queryOpts ListOptions) ([]T, error) {
 	var v []T
 
-	qp, err := queryOpts.BuildQueryParams(a.BaseFilter, a.BaseExpand)
-	if err != nil {
-		return v, fmt.Errorf("failed at BuildQueryParams: %w", err)
-	}
+	qp := queryOpts.BuildQueryParams(a.BaseFilter, a.BaseExpand)
 
 	opts := RequestOptions{
 		Method:        http.MethodGet,
@@ -142,7 +141,7 @@ func (a *APIPage[T]) List(ctx context.Context, queryOpts ListPageOptions) ([]T, 
 
 // Update makes a Patch request to the endpoint and returns T.
 // It requires a body and a RecordID.
-func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body any) (T, error) {
+func (a *APIPage[T]) Update(ctx context.Context, id uuid.UUID, expand []string, body any) (T, error) {
 	var v T
 
 	qp := QueryParams{}
@@ -194,17 +193,17 @@ func (a *APIPage[T]) Update(ctx context.Context, id GUID, expand []string, body 
 	return v, nil
 }
 
-// New makes a Patch request to the endpoint and returns T.
+// Create makes a POST request to the endpoint and returns T.
 // It requires a body.
-func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, error) {
+func (a *APIPage[T]) Create(ctx context.Context, body any, opts GetOptions) (T, error) {
 	var v T
 
 	qp := QueryParams{}
 
 	// Add new expands to base
 	expands := a.BaseExpand
-	if len(expand) > 0 {
-		expands = slices.Concat(a.BaseExpand, expand)
+	if len(opts.Expand) > 0 {
+		expands = slices.Concat(a.BaseExpand, opts.Expand)
 	}
 
 	if len(expands) > 0 {
@@ -212,13 +211,13 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 	}
 	a.client.logger.Debug("Query params initialized.", "expand", qp["$expand"])
 
-	opts := RequestOptions{
+	reqOpts := RequestOptions{
 		Method:        http.MethodPost,
 		EntitySetName: a.entitySetName,
 		QueryParams:   qp,
 		Body:          body,
 	}
-	req, err := a.client.NewRequest(ctx, opts)
+	req, err := a.client.NewRequest(ctx, reqOpts)
 	if err != nil {
 		return v, fmt.Errorf("failed to create Request: %w", err)
 	}
@@ -248,7 +247,7 @@ func (a *APIPage[T]) New(ctx context.Context, expand []string, body any) (T, err
 
 // Delete makes a DELETE request to the endpoint and returns a string message.
 // It requires a RecordID.
-func (a *APIPage[T]) Delete(ctx context.Context, id GUID) error {
+func (a *APIPage[T]) Delete(ctx context.Context, id uuid.UUID) error {
 	opts := RequestOptions{
 		Method:        http.MethodDelete,
 		EntitySetName: a.entitySetName,

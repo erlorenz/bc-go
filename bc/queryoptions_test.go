@@ -4,22 +4,19 @@ import (
 	"testing"
 )
 
-func TestBuildQueryParams(t *testing.T) {
+func TestBuildQueryParams_List(t *testing.T) {
 
 	filter := "number eq 'XXXX'"
 	expands := []string{"salesLines", "customer"}
 
-	opts := ListPageOptions{
+	opts := ListOptions{
 		Filter:  filter,
 		Expand:  expands,
 		Top:     5,
 		OrderBy: []string{"number asc"},
 	}
 
-	qp, err := opts.BuildQueryParams("", nil)
-	if err != nil {
-		t.Fatalf("failed at BuildQueryParams: %s", err)
-	}
+	qp := opts.BuildQueryParams("", nil)
 
 	if qp["$filter"] != filter {
 		t.Errorf(`wrong filter: expected "%s", got "%s"`, filter, qp["$filter"])
@@ -41,15 +38,13 @@ func TestBuildQueryParams(t *testing.T) {
 		t.Errorf(`wrong orderby: expected "number asc", got "%s"`, qp["$orderby"])
 	}
 
-	opts = ListPageOptions{
+	opts = ListOptions{
 		Top:     10,
 		Skip:    20,
 		OrderBy: []string{"number desc"},
 	}
-	qp, err = opts.BuildQueryParams("", nil)
-	if err != nil {
-		t.Fatalf("failed at BuildQueryParams: %s", err)
-	}
+	qp = opts.BuildQueryParams("", nil)
+
 	if qp["$skip"] != "20" {
 		t.Errorf(`wrong skip: expected "20", got "%s"`, qp["$skip"])
 	}
@@ -62,12 +57,12 @@ func TestBuildQueryParams(t *testing.T) {
 
 }
 
-func TestBuildQueryParamsWithBase(t *testing.T) {
+func TestBuildQueryParamsWithBase_List(t *testing.T) {
 
 	filter := "number eq 'XXXX'"
 	expands := []string{"salesLines", "customer"}
 
-	opts := ListPageOptions{
+	opts := ListOptions{
 		Filter:  filter,
 		Expand:  expands,
 		Top:     5,
@@ -80,10 +75,7 @@ func TestBuildQueryParamsWithBase(t *testing.T) {
 	expectedFilter := "documentType eq 'Order' and (number eq 'XXXX')"
 	expectedExpand := "dimensionSetLines,salesLines,customer"
 
-	qp, err := opts.BuildQueryParams(baseFilter, baseExpand)
-	if err != nil {
-		t.Fatalf("failed at BuildQueryParams: %s", err)
-	}
+	qp := opts.BuildQueryParams(baseFilter, baseExpand)
 
 	if qp["$filter"] != expectedFilter {
 		t.Errorf(`wrong filter: expected "%s", got "%s"`, expectedFilter, qp["$filter"])
@@ -99,6 +91,26 @@ func TestBuildQueryParamsWithBase(t *testing.T) {
 
 	if qp["$orderby"] != "number asc" {
 		t.Errorf(`wrong orderby: expected "number asc", got "%s"`, qp["$orderby"])
+	}
+
+}
+
+func TestBuildQueryParamsWithBase_Get(t *testing.T) {
+
+	expands := []string{"salesLines", "customer"}
+	opts := GetOptions{
+		Expand: expands,
+		Select: []string{"id", "number"},
+	}
+
+	baseExpand := []string{"dimensionSetLines"}
+
+	expectedExpand := "dimensionSetLines,salesLines,customer"
+
+	qp := opts.BuildQueryParams(baseExpand)
+
+	if qp["$expand"] != expectedExpand {
+		t.Errorf(`wrong expand: expected "%s", got "%s"`, expectedExpand, qp["$expand"])
 	}
 
 }

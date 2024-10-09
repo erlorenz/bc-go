@@ -7,8 +7,24 @@ import (
 	"strings"
 )
 
-// ListPageOptions build the Query
-type ListPageOptions struct {
+// GetOptions build the QueryParams.
+type GetOptions struct {
+	Expand []string
+	Select []string
+}
+
+// BuildQueryParams converts the GetOptions to ListOptions and calls BuildQueryParams.
+func (q *GetOptions) BuildQueryParams(baseExpand []string) QueryParams {
+	listOpts := ListOptions{
+		Expand: q.Expand,
+		Select: q.Select,
+	}
+
+	return listOpts.BuildQueryParams("", baseExpand)
+}
+
+// ListOptions build the QueryParams.
+type ListOptions struct {
 	Filter  string   // The filter expression. Combined with the BaseFilter.
 	Expand  []string // The expandable fields. Added to the BaseExpand.
 	OrderBy []string // The fields to order by, e.g. "field1 desc" or "field1". Ascending is default.
@@ -19,7 +35,7 @@ type ListPageOptions struct {
 
 // BuildQueryParams combines the base filter/expand with the provided ListQueryOptions to return QueryParams
 // for the request.
-func (q *ListPageOptions) BuildQueryParams(baseFilter string, baseExpand []string) (QueryParams, error) {
+func (q *ListOptions) BuildQueryParams(baseFilter string, baseExpand []string) QueryParams {
 	// Filter should be in format "<baseFilter> and (<extrafilter>)"
 	// Only supports adding to the base filter --don't use base filter if you need an "or"
 	filterStrings := []string{}
@@ -67,5 +83,5 @@ func (q *ListPageOptions) BuildQueryParams(baseFilter string, baseExpand []strin
 		qp["$skip"] = strconv.Itoa(q.Skip)
 	}
 
-	return qp, nil
+	return qp
 }

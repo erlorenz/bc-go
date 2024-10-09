@@ -22,7 +22,6 @@ type Client struct {
 	authClient TokenGetter
 	baseClient *http.Client
 	baseURL    *url.URL
-	common     bool
 	config     ClientConfig
 	logger     *slog.Logger
 }

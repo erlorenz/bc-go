@@ -33,7 +33,7 @@ func NewAPIQuery[T any](client *Client, entitySetName string) *APIQuery[T] {
 }
 
 // List
-func (q *APIQuery[T]) List(ctx context.Context, opts ListPageOptions) ([]T, error) {
+func (q *APIQuery[T]) List(ctx context.Context, opts ListOptions) ([]T, error) {
 	var v []T
 
 	filterStrings := []string{}
