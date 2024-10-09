@@ -12,6 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var Version = "0.14.0"
+
 // Client is used to send and receive HTTP requests/responses to the
 // API server. There should be one client created per publisher/group/version
 // combination as these can each have their own schemas. Clients can
@@ -102,14 +104,9 @@ func NewClient(config ClientConfig, opts ...ClientOption) (*Client, error) {
 		return nil, err
 	}
 
-	// Check if it is a common endpoint (v2.0 for now)
-	// Common endpoints have different path structure
-	isCommon := config.APIEndpoint == "v2.0"
-
 	client := &Client{
 		baseURL: baseURL,
 		config:  config,
-		common:  isCommon,
 	}
 
 	// Apply the optional functions to the client
@@ -139,7 +136,7 @@ func (c *Client) APIEndpoint() string {
 
 // IsCommon returns true if it is a common service endpoint.
 func (c *Client) IsCommon() bool {
-	return c.common
+	return c.config.APIEndpoint == "v2.0"
 }
 
 // Config returns ClientConfig for this instance.
