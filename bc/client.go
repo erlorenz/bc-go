@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var Version = "0.14.0"
+var Version = "0.16.0"
 
 // Client is used to send and receive HTTP requests/responses to the
 // API server. There should be one client created per publisher/group/version
