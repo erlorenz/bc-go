@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
@@ -76,8 +77,17 @@ func (c *Client) NewRequest(ctx context.Context, opts RequestOptions) (*http.Req
 		return nil, err
 	}
 
-	// Build the full URL string
-	newURL := BuildRequestURL(*c.baseURL, opts.EntitySetName, opts.RecordID, opts.QueryParams)
+	// Build the URL path with entity set and optional record ID
+	pathSegment := opts.EntitySetName
+	if opts.RecordID != uuid.Nil {
+		pathSegment += fmt.Sprintf("(%s)", opts.RecordID)
+	}
+
+	// Join base URL with path segment
+	fullURL, err := url.JoinPath(c.baseURL, pathSegment)
+	if err != nil {
+		return nil, fmt.Errorf("building URL: %w", err)
+	}
 
 	// Marshall JSON
 	var body io.Reader
@@ -90,19 +100,24 @@ func (c *Client) NewRequest(ctx context.Context, opts RequestOptions) (*http.Req
 	}
 
 	// Create Request
-	req, err := http.NewRequestWithContext(ctx, opts.Method, newURL.String(), body)
+	req, err := http.NewRequestWithContext(ctx, opts.Method, fullURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("creating new request: %w", err)
 	}
 
-	// Add the Authorization header for each request
-	bearerToken, err := getBearerToken(ctx, c.authClient)
-	if err != nil {
-		return nil, fmt.Errorf("create auth header: %w", err)
+	// Add query params
+	if opts.QueryParams != nil {
+		q := req.URL.Query()
+		for k, v := range opts.QueryParams {
+			if v != "" {
+				q.Set(k, v)
+			}
+		}
+		req.URL.RawQuery = q.Encode()
 	}
-	req.Header.Set("Authorization", bearerToken)
 
-	// Add this header so it doesn't return the extra OData fields
+	// Add BC-specific headers
+	// Note: Authorization and User-Agent are added by bcTransport
 	req.Header.Set("Accept", AcceptJSONNoMetadata)
 
 	// Use ReadOnly for GET
@@ -121,21 +136,9 @@ func (c *Client) NewRequest(ctx context.Context, opts RequestOptions) (*http.Req
 	}
 
 	return req, nil
-
 }
 
-// getBearerToken gets the AccessToken and creates a Bearer token.
-func getBearerToken(ctx context.Context, tg TokenGetter) (string, error) {
-	accessToken, err := tg.GetToken(ctx)
-	if err != nil {
-		return "", fmt.Errorf("error adding auth header: %w", err)
-	}
-
-	return fmt.Sprintf("Bearer %s", accessToken), nil
-
-}
-
-// Do calls Do on the baseClient.
+// Do calls Do on the HTTP client.
 func (c *Client) Do(r *http.Request) (*http.Response, error) {
-	return c.baseClient.Do(r)
+	return c.httpClient.Do(r)
 }
