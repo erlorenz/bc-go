@@ -13,6 +13,7 @@ import (
 // It wraps a base transport and adds:
 //   - Authentication (Bearer token via azcore.TokenCredential)
 //   - User-Agent header
+//   - Accept header (application/json with no OData metadata)
 //
 // The base transport is what the user provides (which may be OTelHTTP or http.DefaultTransport).
 // Request flow: bcTransport → base (user's OTelHTTP) → network
@@ -53,6 +54,7 @@ func (t *bcTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Set BC-specific headers
 	req.Header.Set("Authorization", token)
 	req.Header.Set("User-Agent", t.userAgent)
+	req.Header.Set("Accept", "application/json;odata.metadata=minimal")
 
 	// Delegate to base transport (user's OTelHTTP or DefaultTransport)
 	return t.base.RoundTrip(req)
