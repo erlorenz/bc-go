@@ -91,8 +91,7 @@ type ListOptions struct {
 	OrderBy     string   // OData $orderby expression
 	Select      []string // Fields to select
 	Expand      []string // Related entities to expand
-	Top         int      // Client-side limit ($top parameter, 0 = no limit)
-	Skip        int      // Skip N items ($skip parameter)
+	Top         int      // Limit total results ($top parameter, 0 = no limit)
 	MaxPageSize int      // Server-side page size (Prefer: odata.maxpagesize, 0 = BC default of 20,000)
 	UseLiveDB   bool     // Use live database instead of read replica
 }
@@ -196,7 +195,6 @@ func (a *APIPage[T]) List(ctx context.Context, opts *ListOptions) iter.Seq2[T, e
 			query.Select = opts.Select
 			query.Expand = a.mergeExpands(opts.Expand)
 			query.Top = opts.Top
-			query.Skip = opts.Skip
 		} else {
 			query.Filter = a.DefaultFilter
 			query.Expand = a.DefaultExpand

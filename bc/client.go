@@ -1,10 +1,15 @@
 package bc
 
 import (
+	"bytes"
 	"cmp"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -151,6 +156,139 @@ func NewClient(
 		logger:     logger,
 		userAgent:  userAgent,
 	}, nil
+}
+
+// NewRequest creates a new bc.Request from components (like http.NewRequest).
+// This is the low-level API for building requests manually.
+//
+// Parameters:
+//   - method: HTTP method (GET, POST, PATCH, DELETE)
+//   - path: URL path segment to append to client's baseURL, OR full URL for @odata.nextLink
+//   - query: OData query parameters (can be nil, ignored if path is full URL)
+//   - body: Request body to JSON marshal (can be nil)
+//   - opts: Optional RequestOptions for setting headers/preferences
+//
+// Returns a Request with a fully-built URL ready for execution.
+func NewRequest(c *Client, method, path string, query *ODataQuery, body any, opts ...RequestOption) (*Request, error) {
+	var fullURL string
+
+	// Check if path is a full URL (opaque @odata.nextLink)
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		// Opaque URL - use as-is
+		fullURL = path
+	} else {
+		// Normal path - parse baseURL and join
+		baseURL, err := url.Parse(c.baseURL)
+		if err != nil {
+			return nil, fmt.Errorf("parsing base URL: %w", err)
+		}
+
+		joined := baseURL.JoinPath(path)
+
+		// Add query parameters if provided
+		if query != nil {
+			joined.RawQuery = query.ToValues().Encode()
+		}
+
+		fullURL = joined.String()
+	}
+
+	// Marshal body if present
+	var bodyBytes json.RawMessage
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("marshaling request body: %w", err)
+		}
+		bodyBytes = b
+	}
+
+	// Create request with headers
+	req := &Request{
+		Method: method,
+		URL:    fullURL,
+		Body:   bodyBytes,
+		Header: make(http.Header),
+	}
+
+	// Set default headers
+	if body != nil {
+		req.Header.Set("Content-Type", ContentTypeJSON)
+	}
+
+	if method == http.MethodPatch || method == http.MethodPut || method == http.MethodDelete {
+		req.Header.Set("If-Match", "*")
+	}
+
+	// Apply RequestOptions
+	for _, opt := range opts {
+		opt(req)
+	}
+
+	return req, nil
+}
+
+// Do executes a bc.Request and returns a Response (like http.Client.Do).
+// This is the primary API for executing single requests.
+func (c *Client) Do(ctx context.Context, req *Request) (*Response, error) {
+	// Create body reader
+	var bodyReader io.Reader
+	if req.Body != nil {
+		bodyReader = bytes.NewReader(req.Body)
+	}
+
+	// Create HTTP request with context
+	httpReq, err := http.NewRequestWithContext(ctx, req.Method, req.URL, bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("creating HTTP request: %w", err)
+	}
+
+	// Use headers from bc.Request
+	httpReq.Header = req.Header
+
+	// Execute request (transport adds Authorization, User-Agent, Accept)
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+
+	// Always read and close the body
+	defer resp.Body.Close()
+	rawBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading response body: %w", err)
+	}
+
+	// Check for HTTP errors
+	if resp.StatusCode >= 400 {
+		return nil, c.parseError(resp.StatusCode, resp.Status, rawBody)
+	}
+
+	// Wrap response with BC metadata
+	return &Response{
+		HTTPResponse: resp,
+		RawBody:      json.RawMessage(rawBody),
+		RequestID:    resp.Header.Get("request-id"),
+	}, nil
+}
+
+// DoRequest is a convenience method that combines NewRequest + Do.
+// It exists for backward compatibility and as a simple API for one-off requests.
+func (c *Client) DoRequest(
+	ctx context.Context,
+	method, path string,
+	query *ODataQuery,
+	body any,
+	opts ...RequestOption,
+) (*Response, error) {
+	// Build request
+	req, err := NewRequest(c, method, path, query, body, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Execute request
+	return c.Do(ctx, req)
 }
 
 // Unexported methods for testing
